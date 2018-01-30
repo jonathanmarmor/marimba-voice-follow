@@ -1,7 +1,11 @@
-import scipy
+#!/usr/bin/env python
+
 import os
-import librosa
 from glob import glob
+import datetime
+
+import scipy
+import librosa
 import numpy as np
 
 
@@ -14,9 +18,23 @@ def get_cqt(denis):
     return np.abs(librosa.cqt(denis, sr=44100)).T
 
 
+DOM7 = np.array([0, 3, 7, 10])
+MIN7 = np.array([0, 3, 7, 10])
 MAJ7 = np.array([0, 4, 7, 11])
+MAJ = np.array([0, 4, 7])
+MIN = np.array([0, 3, 7])
+SUS_A = np.array([0, 2, 5, 7])
+SUS_B = np.array([0, 2, 4, 7])
+SUS_C = np.array([0, 3, 5, 7])
+CHORD_TYPES = [DOM7, MIN7, MAJ7, MAJ,  MIN,  SUS_A, SUS_B, SUS_C]
+CHORD_TYPE_WEIGHTS = [.3, .25, .2, .075, .075, 0.1/3, 0.1/3, 0.1/3]
+
+
 def random_chord():
-    chord = (MAJ7 + np.random.randint(12)) % 12
+    chord_type_index = np.random.choice(len(CHORD_TYPES), p=CHORD_TYPE_WEIGHTS)
+    chord_type = CHORD_TYPES[chord_type_index]
+    root = np.random.randint(12)
+    chord = (chord_type + root) % 12
     mask = np.zeros(12)
     mask[chord] = 1
     return mask
@@ -37,7 +55,6 @@ def note_in_chord(mask, p):
             closest = i
 
     return closest + (p // 12) * 12
-
 
 
 def vocal_notes(denis, cqt, wavetable, hop_length=512):
@@ -137,8 +154,37 @@ def find_closest_note(samples, note):
     return closest
 
 
+def test_samples(wavetable):
+    audio = np.zeros(50000 * len(wavetable), dtype=np.float32)
+    for i in range(len(wavetable)):
+        w = wavetable[i]
+        audio[i * 50000:i * 50000 + len(w)] = w
+
+    librosa.output.write_wav('test.wav', audio, sr=44100)
+
+
+def make_music(wavetable):
+    denis = load_denis()
+    cqt = get_cqt(denis)
+
+    audio = vocal_notes(denis, cqt, wavetable)
+
+    if not os.path.exists('output'):
+        os.mkdir('output')
+
+    timestamp = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    filename = 'output/denis-marimba-{}.wav'.format(timestamp)
+
+    librosa.output.write_wav(filename, librosa.util.normalize(audio), sr=44100)
+
+
 def main():
-    pass
+    samples = load_samples()
+    wavetable = make_wavetable(samples)
+
+    # test_samples(wavetable)
+
+    make_music(wavetable)
 
 
 if __name__ == '__main__':
