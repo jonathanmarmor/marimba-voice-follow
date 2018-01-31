@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import os
-from glob import glob
 import datetime
 
-import scipy
 import librosa
 import numpy as np
+
+from samples import make_wavetable
 
 
 def load_denis():
@@ -67,6 +67,7 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
     chord = random_chord()
     for i in range(len(pitches)):
         p = pitches[i]
+        print p
         if p > 0 and i - previous_note_i > 3:
 
             if i - previous_note_i > 50:
@@ -102,71 +103,11 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
     return audio
 
 
-def load_samples():
-    samples = {}
-    for filename in glob('samples/*.wav'):
-        y, _ = librosa.load(filename, sr=44100, mono=True)
-        pitch = os.path.basename(filename).replace('.wav', '')
-        hz = librosa.note_to_midi(pitch)
-        samples[hz] = y
-
-        print filename, np.mean(y)
-
-    return samples
-
-
-def make_wavetable(samples, length=50000, min_note=36, max_note=96):
-    wavetable = np.zeros([max_note - min_note, length], dtype=np.float32)
-    for note in range(min_note, max_note):
-
-        closest_note = find_closest_note(samples, note)
-
-        if note == closest_note:
-            sample = samples[note]
-        else:
-            sample = pitch_shift(samples[closest_note][:length], closest_note, note)
-
-        index = note - min_note
-        sample = librosa.util.normalize(sample[:length])
-        sample[-10000:] *= np.linspace(1, 0, 10000)
-        wavetable[index, :min(len(sample), length)] = sample
-
-    return wavetable
-
-
-def pitch_shift(sample, from_note, to_note):
-    sample = sample
-
-    ratio = (librosa.midi_to_hz(from_note) / librosa.midi_to_hz(to_note))[0]
-    n_samples = int(np.ceil(len(sample) * ratio))
-    # print from_note, to_note, ratio, n_samples
-    return scipy.signal.resample(sample, n_samples, axis=-1)
-
-
-def find_closest_note(samples, note):
-    min_diff = float('+inf')
-    closest = None
-    for n in samples:
-        diff = np.abs(n - note)
-        if diff < min_diff:
-            min_diff = diff
-            closest = n
-
-    return closest
-
-
-def test_samples(wavetable):
-    audio = np.zeros(50000 * len(wavetable), dtype=np.float32)
-    for i in range(len(wavetable)):
-        w = wavetable[i]
-        audio[i * 50000:i * 50000 + len(w)] = w
-
-    librosa.output.write_wav('test.wav', audio, sr=44100)
-
-
 def make_music(wavetable):
     denis = load_denis()
     cqt = get_cqt(denis)
+
+    wavetable = make_wavetable()
 
     audio = vocal_notes(denis, cqt, wavetable)
 
@@ -179,14 +120,5 @@ def make_music(wavetable):
     librosa.output.write_wav(filename, librosa.util.normalize(audio), sr=44100)
 
 
-def main():
-    samples = load_samples()
-    wavetable = make_wavetable(samples)
-
-    # test_samples(wavetable)
-
-    make_music(wavetable)
-
-
 if __name__ == '__main__':
-    main()
+    make_music()
