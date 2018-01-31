@@ -62,14 +62,14 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
     audio = np.zeros([len(denis), 2])
     audio = (audio.T + denis).T
 
-    last_notes = np.ones(len(wavetable)) * -100
-    last_note_i = -100
+    previous_notes = np.ones(len(wavetable)) * -100
+    previous_note_i = -100
     chord = random_chord()
     for i in range(len(pitches)):
         p = pitches[i]
-        if p > 0 and i - last_note_i > 3:
+        if p > 0 and i - previous_note_i > 3:
 
-            if i - last_note_i > 50:
+            if i - previous_note_i > 50:
                 chord = random_chord()
 
             t = i * hop_length
@@ -79,12 +79,12 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
                 p -= 12
 
             if np.random.random() > .5:
-                while p > 0 and i - last_notes[p] < 10:
+                while p > 0 and i - previous_notes[p] < 10:
                     p -= 12
                 if p < 0:
                     continue
             else:
-                while p < 60 and i - last_notes[p] < 10:
+                while p < 60 and i - previous_notes[p] < 10:
                     p += 12
                 if p >= 60:
                     continue
@@ -96,8 +96,8 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
             audio[t:t + length, 0] += note[:length] * pan * .1
             audio[t:t + length, 1] += note[:length] * (1 - pan) * .1
 
-            last_note_i = i
-            last_notes[p] = i
+            previous_note_i = i
+            previous_notes[p] = i
 
     return audio
 
@@ -118,8 +118,9 @@ def load_samples():
 def make_wavetable(samples, length=50000, min_note=36, max_note=96):
     wavetable = np.zeros([max_note - min_note, length], dtype=np.float32)
     for note in range(min_note, max_note):
-        print note
+
         closest_note = find_closest_note(samples, note)
+
         if note == closest_note:
             sample = samples[note]
         else:
@@ -138,7 +139,7 @@ def pitch_shift(sample, from_note, to_note):
 
     ratio = (librosa.midi_to_hz(from_note) / librosa.midi_to_hz(to_note))[0]
     n_samples = int(np.ceil(len(sample) * ratio))
-    print from_note, to_note, ratio, n_samples
+    # print from_note, to_note, ratio, n_samples
     return scipy.signal.resample(sample, n_samples, axis=-1)
 
 
