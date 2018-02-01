@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import os
-import datetime
-
 import librosa
 import numpy as np
 
 from samples import make_wavetable
+from utils import write_wav
 
 
 def load_denis():
@@ -103,7 +101,7 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
     return audio
 
 
-def make_music(wavetable):
+def make_music():
     denis = load_denis()
     cqt = get_cqt(denis)
 
@@ -111,13 +109,7 @@ def make_music(wavetable):
 
     audio = vocal_notes(denis, cqt, wavetable)
 
-    if not os.path.exists('output'):
-        os.mkdir('output')
-
-    timestamp = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-    filename = 'output/denis-marimba-{}.wav'.format(timestamp)
-
-    librosa.output.write_wav(filename, librosa.util.normalize(audio), sr=44100)
+    write_wav(audio, 'denis-marimba')
 
 
 if __name__ == '__main__':

@@ -2,11 +2,12 @@
 
 import os
 from glob import glob
-import datetime
 
 import scipy
 import librosa
 import numpy as np
+
+from utils import write_wav
 
 
 def load_samples():
@@ -64,24 +65,13 @@ def find_closest_note(samples, note):
     return closest
 
 
-def write_wav(audio, output_parent_dir='output', prefix='samples-test'):
-    output_dir = os.path.join(output_parent_dir, prefix)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    timestamp = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-    filename = '{}-{}.wav'.format(prefix, timestamp)
-    filename = os.path.join(output_dir, filename)
-
-    librosa.output.write_wav(filename, audio, sr=44100)
-
-
 def test_samples(wavetable):
     audio = np.zeros(50000 * len(wavetable), dtype=np.float32)
     for i in range(len(wavetable)):
         w = wavetable[i]
         audio[i * 50000:i * 50000 + len(w)] = w
 
-    write_wav(audio)
+    write_wav(audio, 'samples-test')
 
 
 if __name__ == '__main__':
