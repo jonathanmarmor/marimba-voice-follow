@@ -63,8 +63,7 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
     previous_notes = np.ones(len(wavetable)) * -100
     previous_note_i = -100
     chord = random_chord()
-    for i in range(len(pitches)):
-        p = pitches[i]
+    for i, p in enumerate(pitches):
         print p
         if p > 0 and i - previous_note_i > 3:
 
