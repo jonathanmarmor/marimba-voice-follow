@@ -74,6 +74,46 @@ def test_samples(wavetable):
     write_wav(audio, 'samples-test')
 
 
+def random_notes(wavetable):
+    """Chose a random note every 6250 samples"""
+    audio = np.zeros(50000 * len(wavetable), dtype=np.float32)
+
+    note_indexes = range(len(wavetable))
+    tick = 0
+    while tick < len(audio) - 50000:
+        note_index = np.random.choice(note_indexes)
+        note = wavetable[note_index]
+
+        audio[tick:tick + len(note)] += note
+
+        tick += 6250
+
+    write_wav(audio, 'samples-test')
+
+
+def random_notes_2(wavetable):
+    """Choose 100 random notes and put them in random locations throughout the duration of the audio containing the original samples"""
+    audio = np.zeros(50000 * len(wavetable), dtype=np.float32)
+
+    len_audio = len(audio) - 50000
+    all_ticks = range(len_audio)
+
+    note_indexes = range(len(wavetable))
+
+    n_notes = 100
+
+    for _ in range(n_notes):
+        note_index = np.random.choice(note_indexes)
+        note = wavetable[note_index]
+
+        start = np.random.choice(all_ticks)
+
+        audio[start:start + len(note)] += note
+
+    write_wav(audio, 'samples-test')
+
+
 if __name__ == '__main__':
     wavetable = make_wavetable()
-    test_samples(wavetable)
+    # test_samples(wavetable)
+    random_notes_2(wavetable)
