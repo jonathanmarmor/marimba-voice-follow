@@ -3,17 +3,9 @@
 import librosa
 import numpy as np
 
-from samples import make_wavetable
+from marimba_samples import Marimba
+# from audio import Audio
 from utils import write_wav
-
-
-def load_denis():
-    denis, _ = librosa.load('denis-curran-short.mp3', mono=True, sr=44100)
-    return denis
-
-
-def get_cqt(denis):
-    return np.abs(librosa.cqt(denis, sr=44100)).T
 
 
 DOM7 = np.array([0, 3, 7, 10])
@@ -55,15 +47,26 @@ def note_in_chord(mask, p):
     return closest + (p // 12) * 12
 
 
-def vocal_notes(denis, cqt, wavetable, hop_length=512):
-    pitches = np.argmax(cqt, 1) * (np.max(cqt, 1) > .7)
-    audio = np.zeros([len(denis), 2])
-    audio = (audio.T + denis).T
+def make_music():
+    sr = 44100
+    denis_audio, _ = librosa.load('denis-curran-short.mp3', mono=True, sr=sr)
+    cqt = np.abs(librosa.cqt(denis_audio, sr=sr)).T
+    denis_pitches = np.argmax(cqt, 1) * (np.max(cqt, 1) > .7)
 
-    previous_notes = np.ones(len(wavetable)) * -100
+    # audio = Audio(len(denis_audio) / sr, channels=2)  # add 3 seconds at the end so we don't have to cut off the last marimba note
+    # audio.add(0, denis_audio)
+    audio = np.zeros([len(denis_audio), 2])
+    audio = (audio.T + denis_audio).T
+
+    marimba = Marimba()
+
+    previous_notes = np.ones(marimba.n_notes) * -100
     previous_note_i = -100
     chord = random_chord()
-    for i, p in enumerate(pitches):
+
+    hop_length = 512
+
+    for i, p in enumerate(denis_pitches):
         print p
         if p > 0 and i - previous_note_i > 3:
 
@@ -73,7 +76,7 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
             t = i * hop_length
 
             p = note_in_chord(chord, p)
-            while p >= len(wavetable):
+            while p >= marimba.n_notes:
                 p -= 12
 
             if np.random.random() > .5:
@@ -87,27 +90,19 @@ def vocal_notes(denis, cqt, wavetable, hop_length=512):
                 if p >= 60:
                     continue
 
-            note = wavetable[p]
+            note = marimba.get_note(p)
             length = min(len(audio) - t, len(note))
 
             pan = np.random.random()
+
+            # audio.add(t, note, pan=pan)
             audio[t:t + length, 0] += note[:length] * pan * .1
             audio[t:t + length, 1] += note[:length] * (1 - pan) * .1
 
             previous_note_i = i
             previous_notes[p] = i
 
-    return audio
-
-
-def make_music():
-    denis = load_denis()
-    cqt = get_cqt(denis)
-
-    wavetable = make_wavetable()
-
-    audio = vocal_notes(denis, cqt, wavetable)
-
+    # audio.write_wav('denis-marimba')
     write_wav(audio, 'denis-marimba')
 
 
