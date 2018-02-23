@@ -28,7 +28,7 @@ def load_samples(directory):
         samples[midi_number] = y
 
         print '\t', filename
-    print 'Done loading samples.'
+    print 'Done loading samples.\n'
     return samples
 
 
@@ -54,36 +54,54 @@ def find_closest_midi_number(samples_midi_numbers, midi_number):
 
 
 def save_npy(array, filename, output_dir):
+    print '\nSaving numpy array to file...'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
     filename = '{}-{}'.format(filename, timestamp)
     filename = os.path.join(output_dir, filename)
 
+    # TODO: use np.savez_compressed instead of np.save
     np.save(filename, array)
+    print 'Done saving numpy array.\n'
 
 
-def make_cents_samples(original_samples, min_midi_number=3600, max_midi_number=9600):
+def midi_number_to_index(midi_number, min_midi_number=36.0, max_midi_number=96.0):
+    min_midi_number_times_100 = round(min_midi_number * 100)
+    return int(round(midi_number * 100) - min_midi_number_times_100)
+
+
+def make_cents_samples(original_samples, min_midi_number=36.0, max_midi_number=96.0):
     '''Pitch shift samples so there is a sample for every cent transposition over several octaves'''
+
+    print '\nMaking cents samples...'
+
     length = 50000
 
-    wavetable = np.zeros([max_midi_number - min_midi_number, length], dtype=np.float32)
-    for midi_number in range(min_midi_number, max_midi_number):
+    original_samples_keys = original_samples.keys()
+    original_samples_keys.sort()
+
+    n_notes_cents = int(round(max_midi_number * 100)) - int(round(min_midi_number * 100))
+    midi_numbers_cents = np.linspace(min_midi_number, max_midi_number, n_notes_cents, endpoint=False)
+
+    wavetable = np.zeros([n_notes_cents, length], dtype=np.float32)
+
+    for midi_number in midi_numbers_cents:
         print midi_number,
 
-        closest_midi_number = find_closest_midi_number(samples, midi_number)
+        closest_midi_number = find_closest_midi_number(original_samples_keys, midi_number)
 
         if midi_number == closest_midi_number:
             print 'already exists...',
-            sample = samples[midi_number]
+            sample = original_samples[closest_midi_number]
         else:
             print 'shifting pitch from', closest_midi_number, '...',
 
-            from_note = closest_midi_number / 100.0
-            to_note = midi_number / 100.0
+            # from_note = closest_midi_number / 100.0
+            # to_note = midi_number / 100.0
 
-            sample = samples[closest_midi_number][:length]
-            sample = pitch_shift(sample, from_note, to_note)
+            sample = original_samples[closest_midi_number][:length]
+            sample = pitch_shift(sample, closest_midi_number, midi_number)
 
         print 'normalizing...',
         sample = librosa.util.normalize(sample[:length])
@@ -92,27 +110,44 @@ def make_cents_samples(original_samples, min_midi_number=3600, max_midi_number=9
         sample[-10000:] *= np.linspace(1, 0, 10000)
 
         print 'putting in wavetable...',
-        index = midi_number - min_midi_number
+        index = midi_number_to_index(
+                midi_number,
+                min_midi_number=min_midi_number,
+                max_midi_number=max_midi_number)
+        # index = midi_number - min_midi_number
         wavetable[index, :min(len(sample), length)] = sample
 
         print 'done with', midi_number
 
-    print 'Done!'
+    print 'Done making cents samples!'
     return wavetable
 
 
-def make_sample_library(samples_directory, output_path, output_filename,
-        min_midi_number=3600, max_midi_number=9600):
+def make_sample_library(
+        samples_directory,
+        output_path,
+        output_filename,
+        min_midi_number=36.0,
+        max_midi_number=96.0):
 
     original_samples = load_samples(samples_directory)
-    cents_samples = make_cents_samples(original_samples,
-            min_midi_number=min_midi_number, max_midi_number=max_midi_number)
+    cents_samples = make_cents_samples(
+            original_samples,
+            min_midi_number=min_midi_number,
+            max_midi_number=max_midi_number)
+
     save_npy(cents_samples, output_filename, output_path)
 
 
 def make_marimba_samples():
-    make_sample_library('samples/marimba/original', 'samples/marimba',
-            'marimba-cents', min_midi_number=3600, max_midi_number=9600)
+    min_midi_number = 36.0
+    max_midi_number = 37.0  # 96.0
+    make_sample_library(
+            'samples/marimba/original',
+            'samples/marimba',
+            'marimba-cents',
+            min_midi_number=min_midi_number,
+            max_midi_number=max_midi_number)
 
 
 if __name__ == '__main__':
