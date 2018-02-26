@@ -6,10 +6,15 @@ import librosa
 
 
 class Audio(object):
-    def __init__(self, duration_seconds, channels=1, sample_rate=44100):
-        self.duration_seconds = duration_seconds
+    def __init__(self, duration_seconds=None, duration_samples=None, channels=1, sample_rate=44100):
         self.sample_rate = sample_rate
-        self.n_samples = int(sample_rate * duration_seconds)
+
+        if duration_seconds:
+            self.duration_seconds = duration_seconds
+            self.n_samples = int(sample_rate * duration_seconds)
+        elif duration_samples:
+            self.n_samples = duration_samples
+            self.duration_seconds = self.n_samples / sample_rate
 
         self.channels = channels
 

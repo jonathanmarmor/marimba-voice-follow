@@ -4,8 +4,8 @@ import librosa
 import numpy as np
 
 from marimba_samples import Marimba
-# from audio import Audio
-from utils import write_wav
+from audio import Audio
+# from utils import write_wav
 
 
 DOM7 = np.array([0, 3, 7, 10])
@@ -53,10 +53,13 @@ def make_music():
     cqt = np.abs(librosa.cqt(denis_audio, sr=sr)).T
     denis_pitches = np.argmax(cqt, 1) * (np.max(cqt, 1) > .7)
 
-    # audio = Audio(len(denis_audio) / sr, channels=2)  # add 3 seconds at the end so we don't have to cut off the last marimba note
+    audio = Audio(duration_samples=len(denis_audio), channels=2)
+
+    audio._audio += denis_audio
     # audio.add(0, denis_audio)
-    audio = np.zeros([len(denis_audio), 2])
-    audio = (audio.T + denis_audio).T
+
+    # audio = np.zeros([len(denis_audio), 2])
+    # audio = (audio.T + denis_audio).T
 
     marimba = Marimba()
 
@@ -65,9 +68,10 @@ def make_music():
     chord = random_chord()
 
     hop_length = 512
+    len_denis_pitches = len(denis_pitches)
 
     for i, p in enumerate(denis_pitches):
-        print p
+        print i, 'of', len_denis_pitches, p
         if p > 0 and i - previous_note_i > 3:
 
             if i - previous_note_i > 50:
@@ -91,19 +95,19 @@ def make_music():
                     continue
 
             note = marimba.get_note(p)
-            length = min(len(audio) - t, len(note))
+            length = min(audio.n_samples - t, len(note))
 
             pan = np.random.random()
 
-            # audio.add(t, note, pan=pan)
-            audio[t:t + length, 0] += note[:length] * pan * .1
-            audio[t:t + length, 1] += note[:length] * (1 - pan) * .1
+            audio.add(t, note[:length], pan=pan)
+            # audio[t:t + length, 0] += note[:length] * pan * .1
+            # audio[t:t + length, 1] += note[:length] * (1 - pan) * .1
 
             previous_note_i = i
             previous_notes[p] = i
 
-    # audio.write_wav('denis-marimba')
-    write_wav(audio, 'denis-marimba')
+    audio.write_wav('denis-marimba')
+    # write_wav(audio, 'denis-marimba')
 
 
 if __name__ == '__main__':
