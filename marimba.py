@@ -53,9 +53,9 @@ def make_music():
     cqt = np.abs(librosa.cqt(denis_audio, sr=sr)).T
     denis_pitches = np.argmax(cqt, 1) * (np.max(cqt, 1) > .7)
 
-    audio = Audio(duration_samples=len(denis_audio), channels=2)
+    audio = Audio(initial_audio=denis_audio)
 
-    audio._audio += denis_audio
+    # audio._audio += denis_audio
     # audio.add(0, denis_audio)
 
     # audio = np.zeros([len(denis_audio), 2])

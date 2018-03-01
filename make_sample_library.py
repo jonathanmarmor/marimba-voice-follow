@@ -11,7 +11,7 @@ import librosa
 import numpy as np
 
 
-# TODO: function to analyse a sample determine what pitch it is
+# TODO: function to analyse a sample to determine what pitch it is
 # TODO: function to seek through a track and find candidates for samples, eg with stable pitches and clear starts/stops
 
 def load_samples(directory):
@@ -33,8 +33,6 @@ def load_samples(directory):
 
 
 def pitch_shift(sample, from_note, to_note):
-    # sample = sample  # Is there a reason Andreas did this?
-
     ratio = (librosa.midi_to_hz(from_note) / librosa.midi_to_hz(to_note))[0]
     n_samples = int(np.ceil(len(sample) * ratio))
 
@@ -96,10 +94,6 @@ def make_cents_samples(original_samples, min_midi_number=36.0, max_midi_number=9
             sample = original_samples[closest_midi_number]
         else:
             print 'shifting pitch from', closest_midi_number, '...',
-
-            # from_note = closest_midi_number / 100.0
-            # to_note = midi_number / 100.0
-
             sample = original_samples[closest_midi_number][:length]
             sample = pitch_shift(sample, closest_midi_number, midi_number)
 
@@ -114,7 +108,6 @@ def make_cents_samples(original_samples, min_midi_number=36.0, max_midi_number=9
                 midi_number,
                 min_midi_number=min_midi_number,
                 max_midi_number=max_midi_number)
-        # index = midi_number - min_midi_number
         wavetable[index, :min(len(sample), length)] = sample
 
         print 'done with', midi_number

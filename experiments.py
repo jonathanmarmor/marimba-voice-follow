@@ -44,7 +44,7 @@ def random_notes():
     """Chose a random note every 6250 samples"""
     marimba = Marimba()
     audio = Audio(30)
-    len_audio = audio.len() - 50000
+    len_audio = len(audio) - 50000
 
     tick = 0
     while tick < len_audio:
@@ -59,7 +59,7 @@ def random_notes_2():
     """Choose 100 random notes and put them in random locations throughout the duration of the audio containing the original samples"""
     marimba = Marimba()
     audio = Audio(30)
-    len_audio = audio.len() - 50000
+    len_audio = len(audio) - 50000
     n_notes = 100
     for i in range(n_notes):
         print '\t', i, 'of', n_notes
@@ -79,7 +79,9 @@ def microtonal_experiment_1():
 
     # the marimba recordings have a duration of 50000 samples.
     # Don't start a recording within 50000 samples of the end of the audio
-    len_audio = audio.len() - 50000
+    len_audio = len(audio) - 50000
+
+    print len_audio
 
     n_notes = 100
     for i in range(n_notes):
@@ -93,8 +95,38 @@ def microtonal_experiment_1():
     print 'Done running microtonal_experiment_1.'
 
 
+def et_experiment(pitches_per_halfstep=3, notes_per_second=2.5, duration_seconds=30):
+    print 'Running et_experiment...'
+    marimba = Marimba()
+
+    audio = Audio(duration_seconds)
+    max_start = len(audio) - 50000
+
+    min_note = 36.0
+    max_note = 96.0
+    n_halfsteps = max_note - min_note
+    n_pitches = n_halfsteps * pitches_per_halfstep
+    midi_notes = np.linspace(36, 96, n_pitches, endpoint=False)
+
+    print midi_notes
+
+    n_notes = int(duration_seconds * notes_per_second)
+    for i in range(n_notes):
+        print '\t', i, 'of', n_notes
+
+        midi_note = np.random.choice(midi_notes)
+        note = marimba.get_note(midi_note)
+        start = np.random.randint(max_start)
+
+        audio.add(start, note)
+
+    audio.write_wav('et-experiment')
+    print 'Done running et_experiment.'
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
     # random_notes()
-    random_cents_fifths()
+    # random_cents_fifths()
+    et_experiment(3, 1.8, 120)
