@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import random
 
 from marimba_samples import Marimba
 from audio import Audio
@@ -124,9 +125,80 @@ def et_experiment(pitches_per_halfstep=3, notes_per_second=2.5, duration_seconds
     print 'Done running et_experiment.'
 
 
+def block_chord_experiment(pitches_per_halfstep=3, duration_seconds=60):
+    print 'Running block_chord_experiment...'
+    marimba = Marimba()
+
+    audio = Audio(duration_seconds)
+    max_start = len(audio) - 50000
+
+    min_note = 36.0
+    max_note = 96.0
+    n_halfsteps = max_note - min_note
+    n_pitches = n_halfsteps * pitches_per_halfstep
+    midi_notes = np.linspace(36, 96, n_pitches, endpoint=False)
+
+    tick = 0
+    while tick < max_start:
+        for _ in range(3):
+            midi_note = np.random.choice(midi_notes)
+            note = marimba.get_note(midi_note)
+            audio.add(tick, note)
+        tick += int(round((audio.sample_rate * 0.85)))
+
+    audio.write_wav('block-chords')
+    print 'Done running block_chord_experiment.'
+
+
+def common_tone_chord_experiment(pitches_per_halfstep=3, duration_seconds=60):
+    print 'Running common_tone_chord_experiment...'
+    marimba = Marimba()
+
+    audio = Audio(duration_seconds)
+    max_start = len(audio) - 100000
+
+    min_note = 36.0
+    max_note = 96.0
+    n_halfsteps = max_note - min_note
+    n_pitches = n_halfsteps * pitches_per_halfstep
+    midi_notes = list(np.linspace(36, 96, n_pitches, endpoint=False))
+
+    chord = [np.random.choice(midi_notes) for _ in range(4)]
+    chord.sort()
+
+    width = (pitches_per_halfstep * 2) - 1
+    tick = 0
+    while tick < max_start:
+        print chord
+
+        n_notes_to_change = np.random.choice([1, 1, 2])
+        notes_to_change = random.sample(chord, n_notes_to_change)
+        for midi_note in notes_to_change:
+            index_in_chord = chord.index(midi_note)
+
+            index_in_midi_notes = midi_notes.index(midi_note)
+
+            lowest = max(index_in_midi_notes - width, 0)
+            highest = min(index_in_midi_notes + width, len(midi_notes) - 1)
+            new_index_in_midi_notes = np.random.choice(range(lowest, highest))
+            midi_note = midi_notes[new_index_in_midi_notes]
+            chord[index_in_chord] = midi_note
+
+        for midi_note in chord:
+            note = marimba.get_note(midi_note)
+            tick += int(audio.sample_rate * 0.12)
+            audio.add(tick, note)
+
+        tick += int(round((audio.sample_rate * 0.85)))
+
+    audio.write_wav('common-tone-chords')
+    print 'Done running common_tone_chord_experiment.'
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
     # random_notes()
     # random_cents_fifths()
-    et_experiment(3, 1.8, 120)
+    # et_experiment(3, 1.8, 120)
+    common_tone_chord_experiment()
