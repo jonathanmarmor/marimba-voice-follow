@@ -186,7 +186,7 @@ def common_tone_chord_experiment(pitches_per_halfstep=3, duration_seconds=60):
 
         for midi_note in chord:
             note = marimba.get_note(midi_note)
-            tick += int(audio.sample_rate * 0.12)
+            tick += int(audio.sample_rate * 0.08)
             audio.add(tick, note)
 
         tick += int(round((audio.sample_rate * 0.85)))
