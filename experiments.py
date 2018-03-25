@@ -195,10 +195,114 @@ def common_tone_chord_experiment(pitches_per_halfstep=3, duration_seconds=60):
     print 'Done running common_tone_chord_experiment.'
 
 
+def pulse(audio, instrument, midi_note=60.0, duration_seconds=1.0, random_mute_threshhold=1.0):
+    duration_samples = int(round(duration_seconds * audio.sample_rate))
+    note =  instrument.get_note(midi_note)
+
+    samples = 0
+    while samples < len(audio) - (len(note) * 2):
+        if np.random.random() < random_mute_threshhold:
+            audio.add(samples, note)
+        samples += duration_samples
+
+
+def multiple_tempos():
+    print 'Running multiple_tempos...'
+    marimba = Marimba()
+    audio = Audio(120)
+
+    pulse(audio, marimba, 41.0,  1.5)  # 1 -- 0
+    pulse(audio, marimba, 48.02, 1.4)  # 3 -- 702
+
+    pulse(audio, marimba, 53.0,  1.3)  # 1 -- 0
+    pulse(audio, marimba, 56.86, 1.2)  # 5 -- 386
+    pulse(audio, marimba, 60.02, 1.1)  # 3 -- 702
+    pulse(audio, marimba, 62.69, 1.0)  # 7 -- 969
+
+    pulse(audio, marimba, 65.0,  0.9) # 1 -- 0
+    pulse(audio, marimba, 67.04, 0.8) # 9 -- 204
+    pulse(audio, marimba, 68.86, 0.7) # 5 -- 386
+    pulse(audio, marimba, 70.51, 0.6) # 11 - 551
+    pulse(audio, marimba, 72.02, 0.5) # 3 -- 702
+    pulse(audio, marimba, 73.41, 0.4) # 13 -- 841
+    pulse(audio, marimba, 74.69, 0.3) # 7 -- 969
+    pulse(audio, marimba, 75.88, 0.2) # 15 -- 1088
+
+    # pulse(audio, marimba, 77.0, 0.1) # 1 -- 0
+
+    audio.write_wav('multiple-tempos')
+    print 'Done running multiple_tempos.'
+
+
+def multiple_tempos_muting():
+    print 'Running multiple_tempos_muting...'
+    marimba = Marimba()
+    audio = Audio(120)
+
+    pulse(audio, marimba, 41.0,  1.5, 14.0 / 15)  # 1 -- 0
+    pulse(audio, marimba, 48.02, 1.4, 13.0 / 15)  # 3 -- 702
+
+    pulse(audio, marimba, 53.0,  1.3, 12.0 / 15)  # 1 -- 0
+    pulse(audio, marimba, 56.86, 1.2, 11.0 / 15)  # 5 -- 386
+    pulse(audio, marimba, 60.02, 1.1, 10.0 / 15)  # 3 -- 702
+    pulse(audio, marimba, 62.69, 1.0,  9.0 / 15)  # 7 -- 969
+
+    pulse(audio, marimba, 65.0,  0.9,  8.0 / 15) # 1 -- 0
+    pulse(audio, marimba, 67.04, 0.8,  7.0 / 15) # 9 -- 204
+    pulse(audio, marimba, 68.86, 0.7,  6.0 / 15) # 5 -- 386
+    pulse(audio, marimba, 70.51, 0.6,  5.0 / 15) # 11 - 551
+    pulse(audio, marimba, 72.02, 0.5,  4.0 / 15) # 3 -- 702
+    pulse(audio, marimba, 73.41, 0.4,  3.0 / 15) # 13 -- 841
+    pulse(audio, marimba, 74.69, 0.3,  2.0 / 15) # 7 -- 969
+    pulse(audio, marimba, 75.88, 0.2,  1.0 / 15) # 15 -- 1088
+
+    audio.write_wav('multiple-tempos-muting')
+    print 'Done running multiple_tempos_muting.'
+
+
+def multiple_tempos_refactored():
+    print 'Running multiple_tempos_refactored...'
+    marimba = Marimba()
+    audio = Audio(120)
+
+    quarter_duration_in_seconds = 1.2
+
+    pitches = [
+        41.0,  # 1 -- 0
+        48.02, # 3 -- 702
+        53.0,  # 1 -- 0
+        56.86, # 5 -- 386
+        60.02, # 3 -- 702
+        62.69, # 7 -- 969
+        65.0,  # 1 -- 0
+        67.04, # 9 -- 204
+        68.86, # 5 -- 386
+        70.51, # 11 - 551
+        72.02, # 3 -- 702
+        73.41, # 13 - 841
+        74.69, # 7 -- 969
+        75.88, # 15 - 1088
+    ]
+
+    durations = np.linspace(1.5, .2, 14)
+
+    random_mute_threshholds = [n / 15 for n in np.linspace(14, 1, 14)]
+
+    for pitch, duration, random_mute_threshhold in zip(pitches, durations, random_mute_threshholds):
+        duration *= quarter_duration_in_seconds
+        pulse(audio, marimba, pitch, duration, random_mute_threshhold)
+
+    audio.write_wav('multiple-tempos-muting')
+    print 'Done running multiple_tempos_refactored.'
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
     # random_notes()
     # random_cents_fifths()
     # et_experiment(3, 1.8, 120)
-    common_tone_chord_experiment()
+    # common_tone_chord_experiment()
+    # multiple_tempos()
+    # multiple_tempos_muting()
+    multiple_tempos_refactored()

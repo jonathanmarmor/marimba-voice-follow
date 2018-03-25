@@ -33,7 +33,7 @@ def load_samples(directory):
 
 
 def pitch_shift(sample, from_note, to_note):
-    ratio = (librosa.midi_to_hz(from_note) / librosa.midi_to_hz(to_note))[0]
+    ratio = librosa.midi_to_hz(from_note) / librosa.midi_to_hz(to_note)
     n_samples = int(np.ceil(len(sample) * ratio))
 
     return scipy.signal.resample(sample, n_samples, axis=-1)
@@ -134,7 +134,7 @@ def make_sample_library(
 
 def make_marimba_samples():
     min_midi_number = 36.0
-    max_midi_number = 37.0  # 96.0
+    max_midi_number = 96.0
     make_sample_library(
             'samples/marimba/original',
             'samples/marimba',
