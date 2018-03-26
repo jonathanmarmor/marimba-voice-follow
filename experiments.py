@@ -338,6 +338,56 @@ def multiple_random_tempos():
     print 'Done running multiple_random_tempos.'
 
 
+def sections():
+    print 'Running sections...'
+    marimba = Marimba()
+
+    quarter_duration_in_seconds = 1.0
+
+    beats_per_section = 2.0
+    section_duration_seconds = beats_per_section * quarter_duration_in_seconds
+    n_sections = 64
+
+    audio = Audio(int(section_duration_seconds * n_sections) + 3)
+
+    section_duration_samples = int(round(section_duration_seconds * audio.sample_rate))
+
+    chords = []
+    for _ in range(n_sections):
+        root = np.random.choice(np.linspace(0, 12, 24, endpoint=False))
+        chord_type = random.choice([
+            [0, 2.5, 5, 7, 9.5],
+            [0, 2.5, 7, 9.5],
+            [0, 3.5, 7, 10.5],
+            [0, 4.5, 7],
+        ])
+        chord = [(p + root) % 12 for p in chord_type]
+        chords.append(chord)
+
+    start = 0
+    for section_number in range(n_sections):
+        chord = chords[section_number]
+        lowest = 50.0
+        highest = 86.0
+        pitches = [p for p in np.linspace(lowest, highest, (highest - lowest) * 100, endpoint=False) if p % 12 in chord]
+
+        end = start + section_duration_samples
+
+        for _ in range(int(beats_per_section * random.choice([1, 2, 4, 8, 16]))):
+            note_start = np.random.randint(start, end - 5000)
+
+            midi_note = np.random.choice(pitches)
+
+            note = marimba.get_note(midi_note)
+            audio.add(note_start, note)
+
+
+        start += section_duration_samples
+
+    audio.write_wav('sections')
+    print 'Done running sections.'
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -349,3 +399,5 @@ if __name__ == '__main__':
     # multiple_tempos_muting()
     # multiple_tempos_refactored()
     multiple_random_tempos()
+    sections()
+
