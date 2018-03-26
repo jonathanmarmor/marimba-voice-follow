@@ -398,6 +398,6 @@ if __name__ == '__main__':
     # multiple_tempos()
     # multiple_tempos_muting()
     # multiple_tempos_refactored()
-    multiple_random_tempos()
+    # multiple_random_tempos()
     sections()
 
