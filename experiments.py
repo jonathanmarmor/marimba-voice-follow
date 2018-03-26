@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
-import numpy as np
+import math
 import random
+
+import numpy as np
 
 from marimba_samples import Marimba
 from audio import Audio
+from utils import random_from_range, ratio_to_cents
 
 
 def random_cents_fifths():
@@ -260,6 +263,23 @@ def multiple_tempos_muting():
     print 'Done running multiple_tempos_muting.'
 
 
+def get_slice_of_harmonic_series(lowest_harmonic, n_harmonics, lowest_midi_note=41.0):
+    harmonics = np.linspace(lowest_harmonic, n_harmonics + lowest_harmonic - 1, n_harmonics)
+
+    lowest_harmonic_cents = ratio_to_cents(lowest_harmonic, 1.0, round_decimal_places=None)
+
+    midi_notes = []
+    for h in harmonics:
+        cents = ratio_to_cents(h, 1.0, round_decimal_places=None)
+        cents = cents - lowest_harmonic_cents
+        midi_note = cents / 100
+        midi_note += lowest_midi_note
+        midi_note = round(midi_note, 2)
+        midi_notes.append(midi_note)
+
+    return midi_notes
+
+
 def multiple_tempos_refactored():
     print 'Running multiple_tempos_refactored...'
     marimba = Marimba()
@@ -267,26 +287,20 @@ def multiple_tempos_refactored():
 
     quarter_duration_in_seconds = 1.2
 
-    pitches = [
-        41.0,  # 1 -- 0
-        48.02, # 3 -- 702
-        53.0,  # 1 -- 0
-        56.86, # 5 -- 386
-        60.02, # 3 -- 702
-        62.69, # 7 -- 969
-        65.0,  # 1 -- 0
-        67.04, # 9 -- 204
-        68.86, # 5 -- 386
-        70.51, # 11 - 551
-        72.02, # 3 -- 702
-        73.41, # 13 - 841
-        74.69, # 7 -- 969
-        75.88, # 15 - 1088
-    ]
+    n_parts = 23
 
-    durations = np.linspace(1.5, .2, 14)
+    lowest_harmonic = 1
+    n_harmonics = n_parts
 
-    random_mute_threshholds = [n / 15 for n in np.linspace(14, 1, 14)]
+    lowest_midi_note = 36.0
+
+    pitches = get_slice_of_harmonic_series(lowest_harmonic, n_harmonics, lowest_midi_note=lowest_midi_note)
+
+    durations = np.linspace(1.5, .2, n_parts)
+
+    random_mute_threshholds = [n / (n_parts + 1) for n in np.linspace(n_parts, 1, n_parts)]
+
+    print random_mute_threshholds
 
     for pitch, duration, random_mute_threshhold in zip(pitches, durations, random_mute_threshholds):
         duration *= quarter_duration_in_seconds
@@ -294,6 +308,34 @@ def multiple_tempos_refactored():
 
     audio.write_wav('multiple-tempos-muting')
     print 'Done running multiple_tempos_refactored.'
+
+
+def multiple_random_tempos():
+    print 'Running multiple_random_tempos...'
+    marimba = Marimba()
+    audio = Audio(1200)
+
+    quarter_duration_in_seconds = 1.0
+
+    n_parts = 40
+
+    lowest_harmonic = 2
+    n_harmonics = n_parts
+
+    lowest_midi_note = 36.0
+
+    pitches = get_slice_of_harmonic_series(lowest_harmonic, n_harmonics, lowest_midi_note=lowest_midi_note)
+
+    durations = random_from_range(2.0, 6.0, size=n_parts)
+
+    print durations
+
+    for pitch, duration in zip(pitches, durations):
+        duration *= quarter_duration_in_seconds
+        pulse(audio, marimba, pitch, duration, 0.75)
+
+    audio.write_wav('multiple-random-tempos')
+    print 'Done running multiple_random_tempos.'
 
 
 if __name__ == '__main__':
@@ -305,4 +347,5 @@ if __name__ == '__main__':
     # common_tone_chord_experiment()
     # multiple_tempos()
     # multiple_tempos_muting()
-    multiple_tempos_refactored()
+    # multiple_tempos_refactored()
+    multiple_random_tempos()
