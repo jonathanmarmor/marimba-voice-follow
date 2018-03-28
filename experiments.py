@@ -388,6 +388,85 @@ def sections():
     print 'Done running sections.'
 
 
+def overlapping_sections():
+    func_name = 'overlapping_sections'
+    print 'Running {}...'.format(func_name)
+
+    marimba = Marimba()
+
+    quarter_duration_in_seconds = 1.0
+
+    beats_per_harmony_section = 2.0
+    beats_per_density_section = 1.7777
+    n_beats = beats_per_harmony_section * beats_per_density_section * 64
+    duration_in_seconds = int(n_beats * quarter_duration_in_seconds + 3)
+
+    audio = Audio(duration_in_seconds)
+
+    harmony_section_duration_samples = int(round((beats_per_harmony_section * quarter_duration_in_seconds) * audio.sample_rate))
+    start = 0
+    harmony_section_starts = []
+    while start < len(audio):
+        harmony_section_starts.append(start)
+        start += harmony_section_duration_samples
+
+    density_section_duration_samples = int(round((beats_per_harmony_section * quarter_duration_in_seconds) * audio.sample_rate))
+    start = 0
+    density_section_starts = []
+    while start < len(audio):
+        density_section_starts.append(start)
+        start += density_section_duration_samples
+
+    max_start = len(audio) - 500000
+
+    chords = [
+        [0, 4, 7],
+        [0, 5, 9],
+        [0, 4, 7],
+        [0, 5, 9],
+        [0, 4, 7],
+        [0, 5, 9],
+        [2, 5, 9, 0],
+        [2, 5, 7, 10]
+    ]
+
+    lowest = 59
+    highest = 63
+
+    density_section_starts = [s for s in density_section_starts if s < max_start]
+    densities = np.linspace(1, 70, len(density_section_starts))
+    for density, section_start in zip(densities, density_section_starts):
+
+        for _ in range(int(density)):
+            start = np.random.randint(section_start, section_start + density_section_duration_samples)
+            for tick, next_tick in zip(harmony_section_starts[:-1], harmony_section_starts[1:]):
+                if tick <= start < next_tick:
+                    break
+
+            chord_index = harmony_section_starts.index(tick) % len(chords)
+            chord_type = chords[chord_index]
+            pitch = random.choice([p for p in range(lowest, highest) if p % 12 in chord_type])
+            note = marimba.get_note(pitch)
+
+            audio.add(start, note)
+
+        if random.random() < .3:
+            lowest = max([36, lowest - 1])
+        if random.random() < .6:
+            highest = min([95, highest + 1])
+
+    # Future TODO
+    # - at one rate, increase density
+    # - at another rate, increase register
+    # - at another rate, move from staccatto to sustained
+    # - at another rate, do something else
+    # - etc
+
+    audio.write_wav(func_name)
+    print 'Done running {}.'.format(func_name)
+
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -399,5 +478,5 @@ if __name__ == '__main__':
     # multiple_tempos_muting()
     # multiple_tempos_refactored()
     # multiple_random_tempos()
-    sections()
-
+    # sections()
+    overlapping_sections()
