@@ -623,6 +623,60 @@ def dissonant_counterpoint_experiment():
     print 'Done running {}.'.format(func_name)
 
 
+def ratio_to_rounded_pitch_class(m, n):
+    return round((ratio_to_cents(m, n, round_decimal_places=None) % 1200) / 100, 2)
+
+
+def harmonic_to_rounded_pitch_class(h):
+    return ratio_to_rounded_pitch_class(h, 1)
+
+
+def get_odd_harmonics_scale(root=0):
+    odd_harmonics = [(x * 2) + 1 for x in range(12)]
+    scale = [harmonic_to_rounded_pitch_class(h) for h in odd_harmonics]
+
+    zipped = zip(odd_harmonics, scale)
+    zipped.sort(key=lambda x: x[1])
+
+    harmonics, scale = zip(*zipped)
+
+    scale = [round((pc + root) % 12, 2) for pc in scale]
+
+    return scale, harmonics
+
+def diaphonic_trio_piano_two_sections():
+    func_name = 'dissonant_counterpoint_experiment'
+    print 'Running {}...'.format(func_name)
+
+    marimba = Marimba()
+    audio_duration_seconds = 120
+    audio = Audio(audio_duration_seconds)
+
+    odd_harmonics_scale, harmonics = get_odd_harmonics_scale(root=0)
+    odd_harmonics_scale_pitch_options = [round(p, 2) for p in np.linspace(36, 96, (96 - 36) * 100, endpoint=False) if round(p % 12, 2) in odd_harmonics_scale]
+
+    harmonics = [round((ratio_to_cents(h, 1, round_decimal_places=None) + 3600) / 100, 2) for h in range(1, 25)]
+
+    max_start = len(audio) - 100000
+
+    start_options = [int(s) for s in np.linspace(0, int(max_start / 2), audio_duration_seconds * 3)]
+    for _ in range(len(start_options) * 2):
+        start = np.random.choice(start_options)
+        midi_number = np.random.choice(odd_harmonics_scale_pitch_options)
+        note = marimba.get_note(midi_number)
+        audio.add(start, note, pan=np.random.random(), amplify=np.random.choice(np.linspace(.3, 1.3)))
+
+    start_options = [int(s) for s in np.linspace(int(max_start / 2), max_start, audio_duration_seconds * 4)]
+    for _ in range(len(start_options) * 3):
+        start = np.random.choice(start_options)
+        midi_number = np.random.choice(harmonics)
+        note = marimba.get_note(midi_number)
+        audio.add(start, note, pan=np.random.random(), amplify=np.random.choice(np.linspace(.3, 1.3)))
+
+    audio.write_wav(func_name)
+    print 'Done running {}.'.format(func_name)
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -637,5 +691,5 @@ if __name__ == '__main__':
     # sections()
     # overlapping_sections()
     # overlapping_sections_with_weird_modulation()
-    dissonant_counterpoint_experiment()
-
+    # dissonant_counterpoint_experiment()
+    diaphonic_trio_piano_two_sections()
