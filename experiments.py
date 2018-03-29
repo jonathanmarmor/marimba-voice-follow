@@ -644,6 +644,7 @@ def get_odd_harmonics_scale(root=0):
 
     return scale, harmonics
 
+
 def diaphonic_trio_piano_two_sections():
     func_name = 'dissonant_counterpoint_experiment'
     print 'Running {}...'.format(func_name)
@@ -677,6 +678,43 @@ def diaphonic_trio_piano_two_sections():
     print 'Done running {}.'.format(func_name)
 
 
+def different_sections():
+    func_name = 'different_sections'
+    print 'Running {}...'.format(func_name)
+
+
+    from diaphonic_trio import Sections
+
+    marimba = Marimba()
+    audio_duration_seconds = 120
+    audio = Audio(audio_duration_seconds)
+
+    sections = Sections(audio, 32)
+
+    scale_type = [0, 4, 7]
+    root = 0
+    for section in sections:
+        section.root = root
+        scale = [(pc + root) % 12 for pc in scale_type]
+        section.scale = [p for p in range(60, 73) if p % 12 in scale]
+        root = (root + 1) % 12
+
+    max_start = len(audio) - 80000
+
+    n_notes = audio_duration_seconds * 5
+    for _ in range(n_notes):
+        start = np.random.randint(0, max_start)
+
+        scale = sections.get_by_sample_offset(start).scale
+
+        midi_number = np.random.choice(scale)
+        note = marimba.get_note(midi_number)
+        audio.add(start, note)
+
+    audio.write_wav(func_name)
+    print 'Done running {}.'.format(func_name)
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -692,4 +730,5 @@ if __name__ == '__main__':
     # overlapping_sections()
     # overlapping_sections_with_weird_modulation()
     # dissonant_counterpoint_experiment()
-    diaphonic_trio_piano_two_sections()
+    # diaphonic_trio_piano_two_sections()
+    different_sections()
