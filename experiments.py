@@ -566,6 +566,63 @@ def overlapping_sections_with_weird_modulation():
     print 'Done running {}.'.format(func_name)
 
 
+def dissonant_counterpoint(items, n=100):
+    len_items = len(items)
+    indexes = np.arange(len_items)
+    weights = np.ones(len_items)
+
+    choices = []
+    for _ in range(n):
+        # Make weights sum to 1.0
+        weights /= weights.sum()
+
+        # Weighted choice
+        index = np.random.choice(indexes, p=weights)
+        choices.append(items[index])
+
+        # Set the weight of the option that was picked to half of the lowest weighted item
+        weights[index] = min(weights) / 2
+
+        # Double the weight of any option that wasn't picked
+        weights = weights * 2
+
+    return choices
+
+
+def dissonant_counterpoint_experiment():
+    func_name = 'dissonant_counterpoint_experiment'
+    print 'Running {}...'.format(func_name)
+
+    marimba = Marimba()
+
+    n_beats = 120
+    quarter_duration_in_seconds = .5
+    audio_duration = int(n_beats * quarter_duration_in_seconds) + 3
+    audio = Audio(audio_duration)
+    beat_duration = int(quarter_duration_in_seconds * audio.sample_rate)
+
+    pitch_classes = dissonant_counterpoint(range(12), n=n_beats)
+
+    start = 0
+    for i, pc in enumerate(pitch_classes):
+
+        if np.random.random() < .8:
+            new_note_duration = np.random.choice(np.linspace(3000, 50000, 100))
+            note = marimba.get_staccato_note(pc + 60, new_note_duration=new_note_duration)
+        else:
+            note = marimba.get_note(pc + 60)
+
+        audio.add(
+            start,
+            note,
+            amplify=np.random.choice(np.linspace(.2, 1.5, 10)),
+            pan=np.random.random())
+        start += beat_duration
+
+    audio.write_wav(func_name)
+    print 'Done running {}.'.format(func_name)
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -579,4 +636,6 @@ if __name__ == '__main__':
     # multiple_random_tempos()
     # sections()
     # overlapping_sections()
-    overlapping_sections_with_weird_modulation()
+    # overlapping_sections_with_weird_modulation()
+    dissonant_counterpoint_experiment()
+

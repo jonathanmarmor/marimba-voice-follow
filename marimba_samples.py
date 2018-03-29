@@ -32,3 +32,15 @@ class Marimba(object):
         if not cents:
             note_index *= 100
         return self._wavetable[note_index]
+
+    def get_staccato_note(self, midi_number, new_note_duration=15000):
+        new_note_duration = int(new_note_duration)
+        fade_duration = int(new_note_duration / 2)
+
+        note = self.get_note(midi_number)
+
+        new_note = note.copy()
+        new_note = new_note[:new_note_duration]
+        new_note[-fade_duration:] = new_note[-fade_duration:] * np.linspace(1, 0, fade_duration)
+
+        return new_note

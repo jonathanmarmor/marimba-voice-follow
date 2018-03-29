@@ -49,7 +49,7 @@ class Audio(object):
         else:
             return np.zeros([2, n_samples], dtype=np.float32)
 
-    def add(self, start, clip, clip_right=None, pan=0.5):
+    def add(self, start, clip, clip_right=None, pan=0.5, amplify=1.0):
         len_clip = len(clip)
 
         if self.mono:
@@ -60,8 +60,9 @@ class Audio(object):
 
             len_clip_right = len(clip_right)
 
-            self._audio[0, start:start + len_clip] += clip * pan * .1
-            self._audio[1, start:start + len_clip_right] += clip_right * pan * .1
+            self._audio[0, start:start + len_clip] += clip * (1 - pan) * amplify
+            self._audio[1, start:start + len_clip_right] += clip_right * pan * amplify
+
 
     def __len__(self):
         return self._audio.shape[-1]
