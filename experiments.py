@@ -8,6 +8,7 @@ import numpy as np
 from marimba_samples import Marimba
 from audio import Audio
 from utils import random_from_range, ratio_to_cents
+from diaphonic_trio import Sections
 
 
 def random_cents_fifths():
@@ -682,9 +683,6 @@ def different_sections():
     func_name = 'different_sections'
     print 'Running {}...'.format(func_name)
 
-
-    from diaphonic_trio import Sections
-
     marimba = Marimba()
     audio_duration_seconds = 120
     audio = Audio(audio_duration_seconds)
@@ -715,6 +713,60 @@ def different_sections():
     print 'Done running {}.'.format(func_name)
 
 
+def different_sections_multiple():
+    func_name = 'different_sections_multiple'
+    print 'Running {}...'.format(func_name)
+
+    marimba = Marimba()
+    audio_duration_seconds = 240
+    audio = Audio(audio_duration_seconds)
+
+    harmonies = Sections(audio, 32)
+    for i, harmony in enumerate(harmonies):
+        if i % 2:
+            harmony.harmony = [0, 4, 7]
+        else:
+            harmony.harmony = [5, 9, 0]
+
+    n_density_sections = 121
+    densities = Sections(audio, n_density_sections)
+    density_values = np.linspace(4, 100, 121)
+    for section, value in zip(densities, density_values):
+        section.density = value
+
+    n_register_sections = 96 - 65
+    low = 58
+    high = 65
+    register_sections = Sections(audio, n_register_sections)
+    for section in register_sections:
+        section.low = low
+        section.high = high
+        section.register = range(low, high)
+        low = max([36, low - 1])
+        high = min([96, high + 1])
+
+
+
+    max_start = len(audio) - 80000
+
+    for density_section in densities:
+        for i in range(int(density_section.density)):
+            start = np.random.randint(density_section.start, min([density_section.next_start, max_start]))
+
+            register_section = register_sections.get_by_sample_offset(start)
+            harmony_section = harmonies.get_by_sample_offset(start)
+            pitch_options = [p for p in register_section.register if p % 12 in harmony_section.harmony]
+
+            pitch = np.random.choice(pitch_options)
+
+            note = marimba.get_note(pitch)
+
+            audio.add(start, note)
+
+    audio.write_wav(func_name)
+    print 'Done running {}.'.format(func_name)
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -731,4 +783,4 @@ if __name__ == '__main__':
     # overlapping_sections_with_weird_modulation()
     # dissonant_counterpoint_experiment()
     # diaphonic_trio_piano_two_sections()
-    different_sections()
+    different_sections_multiple()
