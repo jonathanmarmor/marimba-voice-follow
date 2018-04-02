@@ -9,6 +9,7 @@ from marimba_samples import Marimba
 from audio import Audio
 from utils import random_from_range, ratio_to_cents
 from diaphonic_trio import Sections
+from dissonant_counterpoint import dissonant_counterpoint
 
 
 def random_cents_fifths():
@@ -567,29 +568,6 @@ def overlapping_sections_with_weird_modulation():
     print 'Done running {}.'.format(func_name)
 
 
-def dissonant_counterpoint(items, n=100):
-    len_items = len(items)
-    indexes = np.arange(len_items)
-    weights = np.ones(len_items)
-
-    choices = []
-    for _ in range(n):
-        # Make weights sum to 1.0
-        weights /= weights.sum()
-
-        # Weighted choice
-        index = np.random.choice(indexes, p=weights)
-        choices.append(items[index])
-
-        # Set the weight of the option that was picked to half of the lowest weighted item
-        weights[index] = min(weights) / 2
-
-        # Double the weight of any option that wasn't picked
-        weights = weights * 2
-
-    return choices
-
-
 def dissonant_counterpoint_experiment():
     func_name = 'dissonant_counterpoint_experiment'
     print 'Running {}...'.format(func_name)
@@ -602,7 +580,8 @@ def dissonant_counterpoint_experiment():
     audio = Audio(audio_duration)
     beat_duration = int(quarter_duration_in_seconds * audio.sample_rate)
 
-    pitch_classes = dissonant_counterpoint(range(12), n=n_beats)
+    dissonant_counterpoint_generator = dissonant_counterpoint(range(12), skip=2)
+    pitch_classes = [dissonant_counterpoint_generator.next() for _ in range(n_beats)]
 
     start = 0
     for i, pc in enumerate(pitch_classes):
@@ -781,6 +760,6 @@ if __name__ == '__main__':
     # sections()
     # overlapping_sections()
     # overlapping_sections_with_weird_modulation()
-    # dissonant_counterpoint_experiment()
+    dissonant_counterpoint_experiment()
     # diaphonic_trio_piano_two_sections()
-    different_sections_multiple()
+    # different_sections_multiple()
