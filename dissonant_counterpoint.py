@@ -37,8 +37,3 @@ def dissonant_counterpoint(items, skip=0):
     while True:
         index, weights = choose_and_reweight(indexes, weights)
         yield items[index]
-
-
-# TODO: Use the function above to create the pattern of dissonant counterpoint
-#       both in the absolute pitch classes used but also in the intervals
-#       between consecutive pitches
