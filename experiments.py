@@ -8,7 +8,7 @@ import numpy as np
 from marimba_samples import Marimba
 from audio import Audio
 from utils import random_from_range, ratio_to_cents
-from diaphonic_trio import Sections
+from sections import Sections
 from dissonant_counterpoint import dissonant_counterpoint
 
 
