@@ -65,18 +65,25 @@ class Section(object):
         self.index = index
         self.of_n_sections = of_n_sections
 
+    def __repr__(self):
+        return '<Section {} of {}, start: {}, duration: {}>'.format(
+            self.index,
+            self.of_n_sections,
+            self.start,
+            self.duration)
+
 
 class Sections(list):
-    def __init__(self, audio, divisions):
+    def __init__(self, audio, n_sections):
         self.audio = audio
-        self.divisions = divisions
+        self.n_sections = n_sections
 
-        self.starts = [int(round(start)) for start in np.linspace(0, len(audio), divisions, endpoint=False)]
+        self.starts = [int(round(start)) for start in np.linspace(0, len(audio), n_sections, endpoint=False)]
 
         nodes = self.starts + [len(audio) + 1]
         index = 0
         for start, next_start in zip(nodes[:-1], nodes[1:]):
-            section = Section(start, next_start, index, divisions, self)
+            section = Section(start, next_start, index, n_sections, self)
             self.append(section)
             index += 1
 
