@@ -666,7 +666,7 @@ def different_sections():
     audio_duration_seconds = 120
     audio = Audio(audio_duration_seconds)
 
-    sections = Sections(audio, 32)
+    sections = Sections(32, len(audio))
 
     scale_type = [0, 4, 7]
     root = 0
@@ -692,15 +692,15 @@ def different_sections():
     print 'Done running {}.'.format(func_name)
 
 
-def different_sections_multiple():
-    func_name = 'different_sections_multiple'
+def different_sections_multiple_1():
+    func_name = 'different_sections_multiple_1'
     print 'Running {}...'.format(func_name)
 
     marimba = Marimba()
     audio_duration_seconds = 240
     audio = Audio(audio_duration_seconds)
 
-    harmonies = Sections(audio, 32)
+    harmonies = Sections(32, len(audio))
     for i, harmony in enumerate(harmonies):
         if i % 2:
             harmony.harmony = [0, 4, 7]
@@ -708,7 +708,7 @@ def different_sections_multiple():
             harmony.harmony = [5, 9, 0]
 
     n_density_sections = 121
-    densities = Sections(audio, n_density_sections)
+    densities = Sections(n_density_sections, len(audio))
     density_values = np.linspace(4, 100, 121)
     for section, value in zip(densities, density_values):
         section.density = value
@@ -716,7 +716,7 @@ def different_sections_multiple():
     n_register_sections = 96 - 65
     low = 58
     high = 65
-    register_sections = Sections(audio, n_register_sections)
+    register_sections = Sections(n_register_sections, len(audio))
     for section in register_sections:
         section.low = low
         section.high = high
@@ -746,15 +746,15 @@ def different_sections_multiple():
     print 'Done running {}.'.format(func_name)
 
 
-def different_sections_multiple():
-    func_name = 'different_sections_multiple'
+def different_sections_multiple_2():
+    func_name = 'different_sections_multiple_2'
     print 'Running {}...'.format(func_name)
 
     marimba = Marimba()
     audio_duration_seconds = 240
     audio = Audio(audio_duration_seconds)
 
-    harmonies = Sections(audio, 32)
+    harmonies = Sections(32, len(audio))
     for i, harmony in enumerate(harmonies):
         if i % 2:
             harmony.harmony = [0, 4, 7]
@@ -762,7 +762,7 @@ def different_sections_multiple():
             harmony.harmony = [5, 9, 0]
 
     n_density_sections = 121
-    densities = Sections(audio, n_density_sections)
+    densities = Sections(n_density_sections, len(audio))
     density_values = np.linspace(4, 100, 121)
     for section, value in zip(densities, density_values):
         section.density = value
@@ -770,7 +770,7 @@ def different_sections_multiple():
     n_register_sections = 96 - 65
     low = 58
     high = 65
-    register_sections = Sections(audio, n_register_sections)
+    register_sections = Sections(n_register_sections, len(audio))
     for section in register_sections:
         section.low = low
         section.high = high
@@ -817,14 +817,15 @@ class MusicWithSections(object):
         print 'Running {}...'.format(self.name)
         self.marimba = Marimba()
         self.audio = Audio(self.duration_seconds)
+        self.len_audio = len(self.audio)
 
     def closeout(self):
         self.audio.write_wav(self.name)
         print 'Done running {}.'.format(self.name)
 
     def setup_harmony_sections(self):
-        n_harmony_sections = 32
-        self.harmony_sections = Sections(self.audio, n_harmony_sections)
+        harmony_sections = [3, 1] * 16
+        self.harmony_sections = Sections(harmony_sections, self.len_audio)
         for i, harmony in enumerate(self.harmony_sections):
             if i % 2:
                 harmony.harmony = [0, 4, 7]
@@ -833,7 +834,7 @@ class MusicWithSections(object):
 
     def setup_density_sections(self):
         n_density_sections = 121
-        self.density_sections = Sections(self.audio, n_density_sections)
+        self.density_sections = Sections(n_density_sections, self.len_audio)
         density_values = np.linspace(4, 100, 121)
         for section, value in zip(self.density_sections, density_values):
             section.density = value
@@ -842,7 +843,7 @@ class MusicWithSections(object):
         n_register_sections = 96 - 65
         low = 58
         high = 65
-        self.register_sections = Sections(self.audio, n_register_sections)
+        self.register_sections = Sections(n_register_sections, self.len_audio)
         for section in self.register_sections:
             section.low = low
             section.high = high
@@ -868,6 +869,55 @@ class MusicWithSections(object):
                 self.audio.add(start, note)
 
 
+# class RhythmSections(object):
+#     def __init__(self):
+#         self.duration_seconds = 240
+#         self.setup()
+#         self.setup_rhythm_sections()
+#         self.go()
+#         self.closeout()
+
+#     def setup(self):
+#         self.name = 'RhythmSections'
+#         print 'Running {}...'.format(self.name)
+#         self.marimba = Marimba()
+#         self.audio = Audio(self.duration_seconds)
+
+#     def closeout(self):
+#         self.audio.write_wav(self.name)
+#         print 'Done running {}.'.format(self.name)
+
+#     def setup_rhythm_sections(self):
+#         self.setup_bars()
+
+
+#     def setup_bars(self):
+#         n_density_sections = 121
+#         self.density_sections = Sections(self.audio, n_density_sections)
+#         density_values = np.linspace(4, 100, 121)
+#         for section, value in zip(self.density_sections, density_values):
+#             section.density = value
+
+
+
+#     def go(self):
+#         max_start = len(self.audio) - 80000
+
+#         for density_section in self.density_sections:
+#             for i in range(int(density_section.density)):
+#                 start = np.random.randint(density_section.start, min([density_section.next_start, max_start]))
+
+#                 register_section = self.register_sections.get_by_sample_offset(start)
+#                 harmony_section = self.harmony_sections.get_by_sample_offset(start)
+#                 pitch_options = [p for p in register_section.register if p % 12 in harmony_section.harmony]
+
+#                 pitch = np.random.choice(pitch_options)
+
+#                 note = self.marimba.get_note(pitch)
+
+#                 self.audio.add(start, note)
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -884,5 +934,8 @@ if __name__ == '__main__':
     # overlapping_sections_with_weird_modulation()
     # dissonant_counterpoint_experiment()
     # diaphonic_trio_piano_two_sections()
-    # different_sections_multiple()
+    # different_sections()
+    # different_sections_multiple_1()
+    # different_sections_multiple_2()
     MusicWithSections()
+    # RhythmSections()
