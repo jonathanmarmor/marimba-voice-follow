@@ -27,3 +27,8 @@ def ratio_to_cents(m, n, round_decimal_places=2):
     if round_decimal_places is not None:
         cents = round(cents, round_decimal_places)
     return cents
+
+
+def scale(x, minimum, maximum, floor=0.0, ceiling=1.0):
+    """Project `x`'s position within `minimum` and `maximum` to the same position within `floor` and `ceiling`"""
+    return ((ceiling - floor) * (float(x) - minimum)) / (maximum - minimum) + floor

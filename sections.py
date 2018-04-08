@@ -1,5 +1,7 @@
 import numpy as np
 
+from utils import scale
+
 
 class Section(object):
     def __init__(self, start, next_start, index, of_n_sections, sections):
@@ -22,16 +24,31 @@ class Section(object):
 
 
 class Sections(list):
-    def __init__(self, audio, n_sections):
+    def __init__(self, audio, n_sections=None, relative_durations=None):
         self.audio = audio
-        self.n_sections = n_sections
 
-        self.starts = [int(round(start)) for start in np.linspace(0, len(audio), n_sections, endpoint=False)]
+        len_audio = len(audio)
 
-        nodes = self.starts + [len(audio) + 1]
+        if n_sections:
+            self.n_sections = n_sections
+            self.starts = [int(round(start)) for start in np.linspace(0, len_audio, n_sections, endpoint=False)]
+
+        elif relative_durations:
+            self.n_sections = len(relative_durations)
+            sum_relative_durations = sum(relative_durations)
+
+            durations = [scale(d, 0, sum_relative_durations, 0, len_audio) for d in relative_durations]
+            start = 0
+            self.starts = []
+            for d in durations:
+                self.starts.append(start)
+                start = int(round(start + d))
+
+        self.next_starts = self.starts[1:] + [len_audio + 1]
+
         index = 0
-        for start, next_start in zip(nodes[:-1], nodes[1:]):
-            section = Section(start, next_start, index, n_sections, self)
+        for start, next_start in zip(self.starts, self.next_starts):
+            section = Section(start, next_start, index, self.n_sections, self)
             self.append(section)
             index += 1
 
