@@ -42,7 +42,8 @@ class Sections(list):
             self.starts = []
             for d in durations:
                 self.starts.append(start)
-                start = int(round(start + d))
+                start += d
+            self.starts = [int(round(s)) for s in self.starts]
 
         self.next_starts = self.starts[1:] + [len_audio + 1]
 
