@@ -5,7 +5,7 @@ from collections import Counter
 import numpy as np
 
 
-def choose(indexes, weights):
+def weighted_choice(indexes, weights):
     # Make weights sum to 1.0
     weights /= weights.sum()
 
@@ -15,17 +15,19 @@ def choose(indexes, weights):
     return index, weights
 
 
-def reweight(index, weights):
-    # Set the weight of the option that was picked to half of the lowest weighted item
-    weights[index] = min(weights) / 2
+def reweight(index, weights, multiplier=2):
+    multiplier = float(multiplier)
 
-    # Double the weight of any option that wasn't picked
-    weights *= 2
+    # Double the weight of all the options
+    weights *= multiplier
+
+    # Set the weight of the option that was picked to half of the lowest weighted item
+    weights[index] = weights.min() / multiplier
 
     return weights
 
 
-def dissonant_counterpoint(items, skip=0):
+def dissonant_counterpoint(items, skip=0, multiplier=2):
     counter = Counter()
 
     len_items = len(items)
@@ -34,14 +36,14 @@ def dissonant_counterpoint(items, skip=0):
 
     # Choose items until every item in `items` has been chosen at least `skip` times
     while not all([counter[i] >= skip for i in indexes]):
-        index, weights = choose(indexes, weights)
-        weights = reweight(index, weights)
+        index, weights = weighted_choice(indexes, weights)
+        weights = reweight(index, weights, multiplier=multiplier)
 
         counter[index] += 1
         # print '\t'.join(['{}: {}'.format(i, counter[i]) for i in indexes])
 
     while True:
-        index, weights = choose(indexes, weights)
-        weights = reweight(index, weights)
+        index, weights = weighted_choice(indexes, weights)
+        weights = reweight(index, weights, multiplier=multiplier)
 
         yield items[index]

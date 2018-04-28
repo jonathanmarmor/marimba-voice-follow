@@ -10,6 +10,7 @@ from audio import Audio
 from utils import random_from_range, ratio_to_cents
 from sections import Sections
 from dissonant_counterpoint import dissonant_counterpoint
+from meter import Meter
 
 
 def random_cents_fifths():
@@ -869,6 +870,237 @@ class MusicWithSections(object):
                 self.audio.add(start, note)
 
 
+
+class Diss(object):
+    def __init__(self):
+        self.duration_seconds = 240
+        self.setup()
+        self.go()
+        self.closeout()
+
+    def setup(self):
+        self.name = 'Diss'
+        print 'Running {}...'.format(self.name)
+        self.marimba = Marimba()
+        self.audio = Audio(self.duration_seconds)
+        self.len_audio = len(self.audio)
+
+    def closeout(self):
+        self.audio.write_wav(self.name)
+        print 'Done running {}.'.format(self.name)
+
+    def go(self):
+        pitch_options = [p for p in range(64, 87) if p % 12 in [0, 2, 4, 7, 9]]
+        melody = dissonant_counterpoint(pitch_options, multiplier=10, skip=20)
+        beats = Sections(self.duration_seconds * 4, self.len_audio - 80000)
+        for beat in beats:
+            if beat.index % 4:
+                pitch = melody.next()
+                note = self.marimba.get_note(pitch)
+                self.audio.add(beat.start, note)
+
+
+        pitch_options = [p for p in range(48, 62) if p % 12 in [0, 2, 4, 7, 9]]
+        melody = dissonant_counterpoint(pitch_options, multiplier=10, skip=20)
+        beats = Sections(self.duration_seconds, self.len_audio - 80000)
+        for beat in beats:
+            pitch = melody.next()
+            note = self.marimba.get_note(pitch)
+            self.audio.add(beat.start, note)
+
+
+class WithMeter(object):
+    def __init__(self):
+        self.duration_seconds = 200
+        self.setup()
+        self.planning()
+        self.go()
+        self.closeout()
+
+    def setup(self):
+        self.name = 'WithMeter'
+        print '\nRunning {}...'.format(self.name)
+        self.marimba = Marimba()
+        self.audio = Audio(self.duration_seconds + 5)
+        self.len_audio = len(self.audio) - (44100 * 5)
+
+    def closeout(self):
+        self.audio.write_wav(self.name)
+        print 'Done running {}.\n'.format(self.name)
+
+    def planning(self):
+        self.meter = Meter(self.duration_seconds, bpm=81)
+
+        self.registers = [
+            range(68, 77),
+            range(77, 87),
+            range(54, 68),
+            range(87, 96),
+            range(36, 48),
+            range(77, 87),
+            range(68, 77),
+            range(87, 96),
+        ]
+
+        self.layer_density_order = [
+            'eighth',
+            'half',
+            'quarter',
+            'sixteenth',
+            'half',
+            'whole',
+            'quarter',
+            'sixteenth'
+        ]
+
+        self.n_layers_sections = Sections(8, self.len_audio)
+        n = 1
+        for section in self.n_layers_sections:
+            section.n_layers = n
+            n += 1
+
+        harmonic_rhythm_duration = 2.0
+
+        self.harmony_sections = Sections(int(self.duration_seconds / harmonic_rhythm_duration), self.len_audio)
+        for harmony in self.harmony_sections:
+            if harmony.index % 4 == 0 or harmony.index % 4 == 1:
+                harmony.harmony = [0, 2, 4, 7, 9]
+            elif harmony.index % 4 == 2:
+                harmony.harmony = [2, 4, 6, 9, 11]
+            else:
+                harmony.harmony = [4, 6, 8, 11, 1]
+
+    def go(self):
+        i = 0
+        for section in self.n_layers_sections:
+            beats = self.meter.get_between_samples(section.start, section.next_start)
+
+            for layer in range(section.n_layers):
+                duration_name = self.layer_density_order[layer]
+                for beat in beats[duration_name]:
+                    if np.random.random() > .22:
+                        harmony = self.harmony_sections.get_by_sample_offset(beat.start_samples)
+                        pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
+                        pitch = np.random.choice(pitch_options)
+                        note = self.marimba.get_note(pitch)
+                        print i
+                        i += 1
+
+                        if beat.index % 8 == 0:
+                            amplify = np.random.choice(np.linspace(.7, 1.1, 10))
+                        elif beat.index % 8 == 4:
+                            amplify = np.random.choice(np.linspace(.5, .8, 10))
+                        elif beat.index % 8 in [2, 6]:
+                            amplify = np.random.choice(np.linspace(.3, .6, 10))
+                        elif beat.index % 8 in [1, 3, 5, 7]:
+                            amplify = np.random.choice(np.linspace(.1, .4, 10))
+
+                        # if section.index == section.of_n_sections - 2:
+                        #     amplify -=
+                        #     amplify = np.random.choice(np.linspace(.01, .24, 20))
+                        # elif section.index == section.of_n_sections - 1:
+                        #     amplify = np.random.choice(np.linspace(.001, .024, 20))
+                        # else:
+                        #     amplify = np.random.choice(np.linspace(.25, 0.9, 10))
+
+                        self.audio.add(
+                            beat.start_samples,
+                            note,
+                            amplify=amplify,
+                            pan=np.random.choice(np.linspace(.15, .85, 10)))
+
+
+# class ConsecutiveSections(object):
+#     def __init__(self):
+#         self.duration_seconds = 240
+#         self.name = 'ConsecutiveSections'
+#         print 'Running {}...'.format(self.name)
+#         self.marimba = Marimba()
+#         self.audio = Audio(self.duration_seconds)
+#         self.len_audio = len(self.audio)
+
+#         self.planning()
+
+#         self.go()
+
+#         self.audio.write_wav(self.name)
+#         print 'Done running {}.'.format(self.name)
+
+#     def planning(self):
+#         self.n_movements = 8
+#         self.movements = Sections(self.n_movements, self.len_audio)
+
+#         densities = [(1, 20), (20, 10), (10, 10), (10, 30), (30, 30), (30, 5), (5, 10), (10, 1)]
+#         registers = []
+#         volumes = []
+
+#         for movement in self.movements:
+#             movement.bars = self.get_bars(movement)
+#             movement.densities = self.get_densities(*densities[movement.index])
+
+#             # movement.harmonies = self.get_harmonies()
+#             # movement.registers = self.get_registers(registers[movement.index])
+#             # movement.volumes = self.get_volumes(volumes[movement.index])
+
+#     def get_bars(self, movement):
+#         n_bars = np.random.randint(5, 10)
+#         return Sections(n_bars, movement.duration)
+
+#     def get_densities(self, start, end):
+#         n_sections = np.random.randint(3, 20)
+#         sections = Sections(n_sections, self.len_audio)
+
+#         densities = np.linspace(start, end, n_sections)
+#         for section, density in zip(sections, densities):
+#             section.density = int(round(density))
+
+
+
+
+
+
+#     def setup_density_sections(self):
+#         n_density_sections = 121
+#         self.density_sections = Sections(n_density_sections, self.len_audio)
+#         density_values = np.linspace(4, 100, 121)
+#         for section, value in zip(self.density_sections, density_values):
+#             section.density = value
+
+#     def setup_register_sections(self):
+#         n_register_sections = 96 - 65
+#         low = 58
+#         high = 65
+#         self.register_sections = Sections(n_register_sections, self.len_audio)
+#         for section in self.register_sections:
+#             section.low = low
+#             section.high = high
+#             section.register = range(low, high)
+#             low = max([36, low - 1])
+#             high = min([96, high + 1])
+
+#     def go(self):
+#         max_start = len(self.audio) - 80000
+
+#         for movement in self.movements:
+#             for bar in movement.bars:
+
+
+
+#             for i in range(int(density_section.density)):
+#                 start = np.random.randint(density_section.start, min([density_section.next_start, max_start]))
+
+#                 register_section = self.register_sections.get_by_sample_offset(start)
+#                 harmony_section = self.harmony_sections.get_by_sample_offset(start)
+#                 pitch_options = [p for p in register_section.register if p % 12 in harmony_section.harmony]
+
+#                 pitch = np.random.choice(pitch_options)
+
+#                 note = self.marimba.get_note(pitch)
+
+#                 self.audio.add(start, note)
+
+
+
 # class RhythmSections(object):
 #     def __init__(self):
 #         self.duration_seconds = 240
@@ -937,5 +1169,7 @@ if __name__ == '__main__':
     # different_sections()
     # different_sections_multiple_1()
     # different_sections_multiple_2()
-    MusicWithSections()
+    # MusicWithSections()
     # RhythmSections()
+    # Diss()
+    WithMeter()
