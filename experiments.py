@@ -1074,6 +1074,100 @@ class Polyrhythm20_21(object):
             start += duration
 
 
+class AnthonyDouglass(object):
+    def __init__(self, add_microbeats=False):
+        self.add_microbeats = add_microbeats
+        self.fib = self.fibonacci()
+        self.setup_rhythm()
+        self.setup()
+        self.go()
+        self.closeout()
+
+    def setup_rhythm(self):
+        self.bpm = 90.0
+        self.quarter_duration = 60.0 / self.bpm
+        self.bar_duration = self.quarter_duration * 4
+
+        self.n_repetitions_per_pattern = 4
+
+        self.n_patterns = 12
+
+        count_in_duration = self.quarter_duration * 8
+        self.duration_seconds = count_in_duration + (self.bar_duration * 8 * self.n_patterns)
+
+    def setup(self):
+        self.name = 'AnthonyDouglass'
+        print '\nRunning {}...'.format(self.name)
+        self.marimba = Marimba()
+        self.end_padding_seconds = 5
+        self.audio = Audio(self.duration_seconds + self.end_padding_seconds)
+        self.len_audio = len(self.audio) - (self.audio.sample_rate * self.end_padding_seconds)
+
+    def closeout(self):
+        self.audio.write_wav(self.name)
+        print 'Done running {}.\n'.format(self.name)
+
+    def fibonacci(self):
+        # Fibonacci numbers
+        a = 1
+        b = 2
+        while True:
+            yield a, b
+            a, b = b, a + b
+
+    def add_pattern(self, start, a, b):
+        original_start = start
+        pattern = [b, b, a]
+
+        microbeats_in_pattern = sum(pattern)
+        microbeat_duration = self.bar_duration / microbeats_in_pattern
+
+        n_bars = 4
+        rhythm = [d * microbeat_duration for d in pattern * n_bars]
+
+        pitches = ([0, 4, 7] * 2) + ([5, 9, 12] * 2)
+        for rhythm_index, duration in enumerate(rhythm):
+            pitch = pitches[rhythm_index % len(pitches)]
+            note = self.marimba.get_note(pitch + 60)
+            self.audio.add(seconds_to_samples(start), note)
+            start += duration
+        next_start = start
+
+        if self.add_microbeats:
+            micro_start = original_start
+
+            microbeats = [microbeat_duration] * microbeats_in_pattern * n_bars
+            for duration in microbeats:
+                note = self.marimba.get_note(48)
+                self.audio.add(seconds_to_samples(micro_start), note, amplify=.15)
+                micro_start += microbeat_duration
+
+        return next_start
+
+    def pulse(self):
+        start = 0
+        half_duration = self.quarter_duration * 2
+        n_pulses = int(self.duration_seconds / half_duration)
+        for _ in range(n_pulses):
+            self.audio.add(seconds_to_samples(start), self.marimba.get_note(84))
+            start += half_duration
+
+    def go(self):
+        self.pulse()
+        print 'count in'
+
+        next_start = self.quarter_duration * 8
+        for _ in range(self.n_patterns):
+            print
+            # Add base pattern
+            print 3, 3, 2
+            next_start = self.add_pattern(next_start, 2, 3)
+
+            a, b = self.fib.next()
+            print b, b, a
+            next_start = self.add_pattern(next_start, a, b)
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -1097,4 +1191,5 @@ if __name__ == '__main__':
     # RhythmSections()
     # Diss()
     # WithMeter()
-    Polyrhythm20_21()
+    # Polyrhythm20_21()
+    AnthonyDouglass(add_microbeats=True)
