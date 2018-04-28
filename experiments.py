@@ -7,7 +7,7 @@ import numpy as np
 
 from marimba_samples import Marimba
 from audio import Audio
-from utils import random_from_range, ratio_to_cents
+from utils import random_from_range, ratio_to_cents, seconds_to_samples
 from sections import Sections
 from dissonant_counterpoint import dissonant_counterpoint
 from meter import Meter
@@ -1010,6 +1010,70 @@ class WithMeter(object):
                             pan=np.random.choice(np.linspace(.15, .85, 10)))
 
 
+class Polyrhythm20_21(object):
+    def __init__(self):
+        self.setup_rhythm()
+        self.setup()
+        self.go()
+        self.closeout()
+
+    def setup_rhythm(self):
+        self.bpm = 120.0
+        self.quarter_duration = 60.0 / self.bpm
+        self.eighth_duration = self.quarter_duration / 2.0
+        self.triplet_duration = self.quarter_duration / 3.0
+        self.sixteenth_duration = self.quarter_duration / 4.0
+
+        self.n_repetitions = 4
+
+        self.rhythm1 = [self.quarter_duration, self.quarter_duration, self.quarter_duration + self.eighth_duration] * 20 * self.n_repetitions
+        self.rhythm2 = [self.quarter_duration, self.quarter_duration, self.quarter_duration + self.triplet_duration] * 21 * self.n_repetitions
+
+        self.rhythms = [self.rhythm1, self.rhythm2]
+
+        self.duration_seconds = sum(self.rhythm1)
+
+        n_quarters = int(round(self.duration_seconds / self.quarter_duration))
+        self.pulse = [self.quarter_duration] * n_quarters
+
+    def setup(self):
+        self.name = 'Polyrhythm20_21'
+        print '\nRunning {}...'.format(self.name)
+        self.marimba = Marimba()
+        self.end_padding_seconds = 5
+        self.audio = Audio(self.duration_seconds + self.end_padding_seconds)
+        self.len_audio = len(self.audio) - (self.audio.sample_rate * self.end_padding_seconds)
+
+    def closeout(self):
+        self.audio.write_wav(self.name)
+        print 'Done running {}.\n'.format(self.name)
+
+    def go(self):
+        for i, rhythm in enumerate(self.rhythms):
+            start = 0
+            for duration in rhythm:
+                if i == 0:
+                    pitch = 65
+                else:
+                    pitch = 68
+
+                note = self.marimba.get_note(pitch)
+
+                print start
+
+                self.audio.add(seconds_to_samples(start), note, pan=i)
+
+                start += duration
+
+        start = 0
+        for i, duration in enumerate(self.pulse):
+            amplify = .7
+            if i % 2:
+                amplify = .1
+            self.audio.add(seconds_to_samples(start), self.marimba.get_note(49), amplify=amplify)
+            start += duration
+
+
 # class ConsecutiveSections(object):
 #     def __init__(self):
 #         self.duration_seconds = 240
@@ -1172,4 +1236,5 @@ if __name__ == '__main__':
     # MusicWithSections()
     # RhythmSections()
     # Diss()
-    WithMeter()
+    # WithMeter()
+    Polyrhythm20_21()
