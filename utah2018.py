@@ -19,14 +19,16 @@ class Utah2018(object):
         self.closeout()
 
     def setup(self):
-        self.name = 'Utah2018-{}'.format(self.version)
+        self.base_name = 'Utah2018'
+        self.output_parent_dir = self.base_name
+        self.name = '{}-{}'.format(self.base_name, self.version)
         print '\nRunning {}...'.format(self.name)
         self.marimba = Marimba()
         self.audio = Audio(self.duration_seconds + 5)
         self.len_audio = len(self.audio) - (44100 * 5)
 
     def closeout(self):
-        self.audio.write_wav(self.name)
+        self.audio.write_wav(self.name, output_parent_dir=self.base_name)
         print 'Done running {}.\n'.format(self.name)
 
     def planning(self):
