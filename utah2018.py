@@ -11,6 +11,7 @@ from sections import Sections
 class Utah2018(object):
     def __init__(self, version):
         self.version = version
+
         self.duration_seconds = 200
         self.setup()
         self.planning()
@@ -29,7 +30,7 @@ class Utah2018(object):
         print 'Done running {}.\n'.format(self.name)
 
     def planning(self):
-        self.meter = Meter(self.duration_seconds, bpm=81)
+        self.meter = Meter(self.duration_seconds, bpm=120)
 
         self.registers = [
             range(68, 77),
@@ -62,13 +63,36 @@ class Utah2018(object):
         harmonic_rhythm_duration = 2.0
 
         self.harmony_sections = Sections(int(self.duration_seconds / harmonic_rhythm_duration), self.len_audio)
-        for harmony in self.harmony_sections:
-            if harmony.index % 4 == 0 or harmony.index % 4 == 1:
-                harmony.harmony = [0, 2, 4, 7, 9]
-            elif harmony.index % 4 == 2:
-                harmony.harmony = [2, 4, 6, 9, 11]
-            else:
-                harmony.harmony = [4, 6, 8, 11, 1]
+        for harmony_section_index, harmony in enumerate(self.harmony_sections):
+            harmony_index = harmony.index % 16
+
+            if harmony_index in [0, 1, 2, 3]:
+                harmony.harmony = [0, 4, 7]
+                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+            elif harmony_index in [4, 5, 6, 7]:
+                harmony.harmony = [2, 5, 7, 11]
+                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+            elif harmony_index in [8, 9]:
+                harmony.harmony = [0, 4, 7]
+                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+            elif harmony_index in [10]:
+                harmony.harmony = [0, 2, 5, 9]
+                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+            elif harmony_index in [11]:
+                harmony.harmony = [2, 5, 7, 11]
+                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+            elif harmony_index in [12, 13, 14]:
+                harmony.harmony = [0, 4, 7]
+                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+            elif harmony_index in [15]:
+                harmony.harmony = [2, 5, 7, 11]
+                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
 
     def go(self):
         i = 0
@@ -80,28 +104,34 @@ class Utah2018(object):
                 for beat in beats[duration_name]:
                     if np.random.random() > .22:
                         harmony = self.harmony_sections.get_by_sample_offset(beat.start_samples)
-                        pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
-                        pitch = np.random.choice(pitch_options)
-                        note = self.marimba.get_note(pitch)
-                        print i
+
+                        # print i
                         i += 1
 
-                        if beat.index % 8 == 0:
+                        beat_index = beat.index % 8
+                        if beat_index == 0:
                             amplify = np.random.choice(np.linspace(.7, 1.1, 10))
-                        elif beat.index % 8 == 4:
-                            amplify = np.random.choice(np.linspace(.5, .8, 10))
-                        elif beat.index % 8 in [2, 6]:
-                            amplify = np.random.choice(np.linspace(.3, .6, 10))
-                        elif beat.index % 8 in [1, 3, 5, 7]:
-                            amplify = np.random.choice(np.linspace(.1, .4, 10))
+                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
+                            pitch = np.random.choice(pitch_options)
+                            note = self.marimba.get_note(pitch)
 
-                        # if section.index == section.of_n_sections - 2:
-                        #     amplify -=
-                        #     amplify = np.random.choice(np.linspace(.01, .24, 20))
-                        # elif section.index == section.of_n_sections - 1:
-                        #     amplify = np.random.choice(np.linspace(.001, .024, 20))
-                        # else:
-                        #     amplify = np.random.choice(np.linspace(.25, 0.9, 10))
+                        elif beat_index == 4:
+                            amplify = np.random.choice(np.linspace(.5, .8, 10))
+                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
+                            pitch = np.random.choice(pitch_options)
+                            note = self.marimba.get_note(pitch)
+
+                        elif beat_index in [2, 6]:
+                            amplify = np.random.choice(np.linspace(.3, .6, 10))
+                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.scale]
+                            pitch = np.random.choice(pitch_options)
+                            note = self.marimba.get_note(pitch)
+
+                        elif beat_index in [1, 3, 5, 7]:
+                            amplify = np.random.choice(np.linspace(.1, .4, 10))
+                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.scale]
+                            pitch = np.random.choice(pitch_options)
+                            note = self.marimba.get_note(pitch)
 
                         self.audio.add(
                             beat.start_samples,
@@ -111,4 +141,4 @@ class Utah2018(object):
 
 
 if __name__ == '__main__':
-    Utah2018('0.0.0')
+    Utah2018('0.0.1')
