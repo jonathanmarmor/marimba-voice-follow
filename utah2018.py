@@ -8,6 +8,24 @@ from meter import Meter
 from sections import Sections
 
 
+def get_scale_options(accidentals_limit=3):
+    """Return a list of major scales in keys that are up to `accidentals_limit` fifths away from C."""
+
+    scale_type = [0, 2, 4, 5, 7, 9, 11]
+
+    tonics = [0]
+    for accidentals in range(1, accidentals_limit + 1):
+        tonics.insert(0, -(7 * accidentals) % 12)
+        tonics.append((7 * accidentals) % 12)
+
+    scales = []
+    for tonic in tonics:
+        scale = [(tonic + scale_degree) % 12 for scale_degree in scale_type]
+        scales.append(scale)
+
+    return scales
+
+
 class Utah2018(object):
     def __init__(self, version):
         self.version = version
@@ -109,6 +127,9 @@ class Utah2018(object):
 
                         # print i
                         i += 1
+
+                        if beat.position_in_bar
+                            pitch_pool =
 
                         beat_index = beat.index % 8
                         if beat_index == 0:

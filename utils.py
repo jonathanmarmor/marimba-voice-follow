@@ -1,6 +1,8 @@
 import os
 import math
 from datetime import datetime
+import itertools
+import collections
 
 import numpy as np
 import librosa
@@ -48,3 +50,30 @@ def get_beat_starts(bpm, total_duration, sample_rate=44100):
     starts_seconds = np.linspace(0, effective_duration, n_beats, endpoint=False)
     starts_samples = seconds_to_samples_vectorized(starts_seconds)
     return starts_samples
+
+
+def pairwise(iterable):
+    """
+    >>> list(pairwise(range(5)))
+    [(0, 1), (1, 2), (2, 3), (3, 4)]
+
+    """
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return itertools.izip(a, b)
+
+
+def find_loops(seq):
+    seen = []
+    dupes = collections.defaultdict(list)
+    for i, item in enumerate(seq):
+        dupes[item].append(i)
+
+    loops = collections.defaultdict(list)
+    for item in dupes:
+        indexes = dupes[item]
+        if len(indexes) > 1:
+            for a, b in pairwise(indexes):
+                loops[seq[a]].append(seq[a:b])
+
+    return loops
