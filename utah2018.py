@@ -38,7 +38,7 @@ class Utah2018(object):
 
     def setup(self):
         self.base_name = 'Utah2018'
-        self.output_parent_dir = self.base_name
+        self.output_parent_dir = 'output/{}'.format(self.base_name)
         self.name = '{}-{}'.format(self.base_name, self.version)
         print '\nRunning {}...'.format(self.name)
         self.marimba = Marimba()
@@ -46,7 +46,7 @@ class Utah2018(object):
         self.len_audio = len(self.audio) - (44100 * 5)
 
     def closeout(self):
-        self.audio.write_wav(self.name, output_parent_dir=self.base_name)
+        self.audio.write_wav(self.name, output_parent_dir=self.output_parent_dir)
         print 'Done running {}.\n'.format(self.name)
 
     def planning(self):
@@ -128,8 +128,8 @@ class Utah2018(object):
                         # print i
                         i += 1
 
-                        if beat.position_in_bar
-                            pitch_pool =
+                        # if beat.position_in_bar
+                        #     pitch_pool =
 
                         beat_index = beat.index % 8
                         if beat_index == 0:
