@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import random
+
 import numpy as np
 
 from marimba_samples import Marimba
@@ -32,7 +34,7 @@ class Utah2018(object):
 
         self.duration_seconds = 200
         self.setup()
-        self.planning()
+        # self.planning()
         self.go()
         self.closeout()
 
@@ -49,119 +51,144 @@ class Utah2018(object):
         self.audio.write_wav(self.name, output_parent_dir=self.output_parent_dir)
         print 'Done running {}.\n'.format(self.name)
 
-    def planning(self):
-        self.meter = Meter(self.duration_seconds, bpm=120)
-
-        self.registers = [
-            range(68, 77),
-            range(77, 87),
-            range(54, 68),
-            range(87, 96),
-            range(36, 48),
-            range(77, 87),
-            range(68, 77),
-            range(87, 96),
-        ]
-
-        self.layer_density_order = [
-            'eighth',
-            'half',
-            'quarter',
-            'sixteenth',
-            'half',
-            'whole',
-            'quarter',
-            'sixteenth'
-        ]
-
-        self.n_layers_sections = Sections(8, self.len_audio)
-        n = 1
-        for section in self.n_layers_sections:
-            section.n_layers = n
-            n += 1
-
-        harmonic_rhythm_duration = 2.0
-
-        self.harmony_sections = Sections(int(self.duration_seconds / harmonic_rhythm_duration), self.len_audio)
-        for harmony_section_index, harmony in enumerate(self.harmony_sections):
-            harmony_index = harmony.index % 16
-
-            if harmony_index in [0, 1, 2, 3]:
-                harmony.harmony = [0, 4, 7]
-                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
-
-            elif harmony_index in [4, 5, 6, 7]:
-                harmony.harmony = [2, 5, 7, 11]
-                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
-
-            elif harmony_index in [8, 9]:
-                harmony.harmony = [0, 4, 7]
-                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
-
-            elif harmony_index in [10]:
-                harmony.harmony = [0, 2, 5, 9]
-                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
-
-            elif harmony_index in [11]:
-                harmony.harmony = [2, 5, 7, 11]
-                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
-
-            elif harmony_index in [12, 13, 14]:
-                harmony.harmony = [0, 4, 7]
-                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
-
-            elif harmony_index in [15]:
-                harmony.harmony = [2, 5, 7, 11]
-                harmony.scale = [0, 2, 4, 5, 7, 9, 11]
-
     def go(self):
-        i = 0
-        for section in self.n_layers_sections:
-            beats = self.meter.get_between_samples(section.start, section.next_start)
+        self.meter = Meter(self.duration_seconds, bpm=80)
+        self.scale_options = get_scale_options()
 
-            for layer in range(section.n_layers):
-                duration_name = self.layer_density_order[layer]
-                for beat in beats[duration_name]:
-                    if np.random.random() > .22:
-                        harmony = self.harmony_sections.get_by_sample_offset(beat.start_samples)
+        scale = random.choice(self.scale_options)
 
-                        # print i
-                        i += 1
+        pitch = np.random.randint(62, 76)
 
-                        # if beat.position_in_bar
-                        #     pitch_pool =
+        for sixteenth in self.meter.layers_by_name['sixteenth']:
+            if np.random.random() < .8:
+                # Rest every 10 or so notes
 
-                        beat_index = beat.index % 8
-                        if beat_index == 0:
-                            amplify = np.random.choice(np.linspace(.7, 1.1, 10))
-                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
-                            pitch = np.random.choice(pitch_options)
-                            note = self.marimba.get_note(pitch)
+                if np.random.random() < .95:
+                    # Switch scales every 10 or so notes
+                    scale = random.choice(self.scale_options)
 
-                        elif beat_index == 4:
-                            amplify = np.random.choice(np.linspace(.5, .8, 10))
-                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
-                            pitch = np.random.choice(pitch_options)
-                            note = self.marimba.get_note(pitch)
+                pitch_options = range(max([pitch - 5, 56]), min([pitch + 6, 88]))
+                pitch_options.remove(pitch)
+                pitch_options = [p for p in pitch_options if p % 12 in scale]
+                pitch = np.random.choice(pitch_options)
 
-                        elif beat_index in [2, 6]:
-                            amplify = np.random.choice(np.linspace(.3, .6, 10))
-                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.scale]
-                            pitch = np.random.choice(pitch_options)
-                            note = self.marimba.get_note(pitch)
+                note = self.marimba.get_note(pitch)
+                self.audio.add(sixteenth.start_samples, note)
 
-                        elif beat_index in [1, 3, 5, 7]:
-                            amplify = np.random.choice(np.linspace(.1, .4, 10))
-                            pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.scale]
-                            pitch = np.random.choice(pitch_options)
-                            note = self.marimba.get_note(pitch)
 
-                        self.audio.add(
-                            beat.start_samples,
-                            note,
-                            amplify=amplify,
-                            pan=np.random.choice(np.linspace(.15, .85, 10)))
+    # def planning(self):
+    #     self.meter = Meter(self.duration_seconds, bpm=120)
+
+    #     self.registers = [
+    #         range(68, 77),
+    #         range(77, 87),
+    #         range(54, 68),
+    #         range(87, 96),
+    #         range(36, 48),
+    #         range(77, 87),
+    #         range(68, 77),
+    #         range(87, 96),
+    #     ]
+
+    #     self.layer_density_order = [
+    #         'eighth',
+    #         'half',
+    #         'quarter',
+    #         'sixteenth',
+    #         'half',
+    #         'whole',
+    #         'quarter',
+    #         'sixteenth'
+    #     ]
+
+    #     self.n_layers_sections = Sections(8, self.len_audio)
+    #     n = 1
+    #     for section in self.n_layers_sections:
+    #         section.n_layers = n
+    #         n += 1
+
+    #     harmonic_rhythm_duration = 2.0
+
+    #     self.harmony_sections = Sections(int(self.duration_seconds / harmonic_rhythm_duration), self.len_audio)
+    #     for harmony_section_index, harmony in enumerate(self.harmony_sections):
+    #         harmony_index = harmony.index % 16
+
+    #         if harmony_index in [0, 1, 2, 3]:
+    #             harmony.harmony = [0, 4, 7]
+    #             harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+    #         elif harmony_index in [4, 5, 6, 7]:
+    #             harmony.harmony = [2, 5, 7, 11]
+    #             harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+    #         elif harmony_index in [8, 9]:
+    #             harmony.harmony = [0, 4, 7]
+    #             harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+    #         elif harmony_index in [10]:
+    #             harmony.harmony = [0, 2, 5, 9]
+    #             harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+    #         elif harmony_index in [11]:
+    #             harmony.harmony = [2, 5, 7, 11]
+    #             harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+    #         elif harmony_index in [12, 13, 14]:
+    #             harmony.harmony = [0, 4, 7]
+    #             harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+    #         elif harmony_index in [15]:
+    #             harmony.harmony = [2, 5, 7, 11]
+    #             harmony.scale = [0, 2, 4, 5, 7, 9, 11]
+
+    # def go(self):
+    #     i = 0
+    #     for section in self.n_layers_sections:
+    #         beats = self.meter.get_between_samples(section.start, section.next_start)
+
+    #         for layer in range(section.n_layers):
+    #             duration_name = self.layer_density_order[layer]
+    #             for beat in beats[duration_name]:
+    #                 if np.random.random() > .22:
+    #                     harmony = self.harmony_sections.get_by_sample_offset(beat.start_samples)
+
+    #                     # print i
+    #                     i += 1
+
+    #                     # if beat.position_in_bar
+    #                     #     pitch_pool =
+
+    #                     beat_index = beat.index % 8
+    #                     if beat_index == 0:
+    #                         amplify = np.random.choice(np.linspace(.7, 1.1, 10))
+    #                         pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
+    #                         pitch = np.random.choice(pitch_options)
+    #                         note = self.marimba.get_note(pitch)
+
+    #                     elif beat_index == 4:
+    #                         amplify = np.random.choice(np.linspace(.5, .8, 10))
+    #                         pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
+    #                         pitch = np.random.choice(pitch_options)
+    #                         note = self.marimba.get_note(pitch)
+
+    #                     elif beat_index in [2, 6]:
+    #                         amplify = np.random.choice(np.linspace(.3, .6, 10))
+    #                         pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.scale]
+    #                         pitch = np.random.choice(pitch_options)
+    #                         note = self.marimba.get_note(pitch)
+
+    #                     elif beat_index in [1, 3, 5, 7]:
+    #                         amplify = np.random.choice(np.linspace(.1, .4, 10))
+    #                         pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.scale]
+    #                         pitch = np.random.choice(pitch_options)
+    #                         note = self.marimba.get_note(pitch)
+
+    #                     self.audio.add(
+    #                         beat.start_samples,
+    #                         note,
+    #                         amplify=amplify,
+    #                         pan=np.random.choice(np.linspace(.15, .85, 10)))
 
 
 if __name__ == '__main__':
-    Utah2018('0.0.1')
+    Utah2018('0.0.2')
