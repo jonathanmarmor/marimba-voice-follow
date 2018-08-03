@@ -7,10 +7,10 @@ import numpy as np
 
 from marimba_samples import Marimba
 from audio import Audio
-from utils import random_from_range, ratio_to_cents, seconds_to_samples
+from utils import random_from_range, ratio_to_cents, seconds_to_samples, n_wise
 from sections import Sections
 from dissonant_counterpoint import dissonant_counterpoint
-from meter import Meter
+# from meter import Meter
 
 
 def random_cents_fifths():
@@ -201,14 +201,37 @@ def common_tone_chord_experiment(pitches_per_halfstep=3, duration_seconds=60):
     print 'Done running common_tone_chord_experiment.'
 
 
-def pulse(audio, instrument, midi_note=60.0, duration_seconds=1.0, random_mute_threshhold=1.0):
-    duration_samples = int(round(duration_seconds * audio.sample_rate))
-    note =  instrument.get_note(midi_note)
+def pulse(
+        audio,
+        instrument,
+        midi_note=60.0,
+        duration_seconds=1.0,
+        random_mute_threshhold=1.0,
+        amplify=1.0,
+        start_together=True,
+        offset_start=0,
+        offset_end=None,
+    ):
 
-    samples = 0
-    while samples < len(audio) - (len(note) * 2):
+    duration_samples = int(round(duration_seconds * audio.sample_rate))
+    offset_start = int(round(offset_start * audio.sample_rate))
+    offset_end = int(round(offset_end * audio.sample_rate))
+
+    note = instrument.get_note(midi_note)
+
+    latest_start = len(audio) - (len(note) * 2)
+    if offset_end == None or offset_end > latest_start:
+        offset_end = latest_start
+
+    samples = offset_start
+    if not start_together:
+        samples += duration_samples
+    if start_together == 'random':
+        samples += int(round(random_from_range(0, duration_samples * 2)))
+
+    while samples < offset_end:
         if np.random.random() < random_mute_threshhold:
-            audio.add(samples, note)
+            audio.add(samples, note, amplify=amplify)
         samples += duration_samples
 
 
@@ -909,105 +932,105 @@ class Diss(object):
             self.audio.add(beat.start, note)
 
 
-class WithMeter(object):
-    def __init__(self):
-        self.duration_seconds = 200
-        self.setup()
-        self.planning()
-        self.go()
-        self.closeout()
+# class WithMeter(object):
+#     def __init__(self):
+#         self.duration_seconds = 200
+#         self.setup()
+#         self.planning()
+#         self.go()
+#         self.closeout()
 
-    def setup(self):
-        self.name = 'WithMeter'
-        print '\nRunning {}...'.format(self.name)
-        self.marimba = Marimba()
-        self.audio = Audio(self.duration_seconds + 5)
-        self.len_audio = len(self.audio) - (44100 * 5)
+#     def setup(self):
+#         self.name = 'WithMeter'
+#         print '\nRunning {}...'.format(self.name)
+#         self.marimba = Marimba()
+#         self.audio = Audio(self.duration_seconds + 5)
+#         self.len_audio = len(self.audio) - (44100 * 5)
 
-    def closeout(self):
-        self.audio.write_wav(self.name)
-        print 'Done running {}.\n'.format(self.name)
+#     def closeout(self):
+#         self.audio.write_wav(self.name)
+#         print 'Done running {}.\n'.format(self.name)
 
-    def planning(self):
-        self.meter = Meter(self.duration_seconds, bpm=81)
+#     def planning(self):
+#         self.meter = Meter(self.duration_seconds, bpm=81)
 
-        self.registers = [
-            range(68, 77),
-            range(77, 87),
-            range(54, 68),
-            range(87, 96),
-            range(36, 48),
-            range(77, 87),
-            range(68, 77),
-            range(87, 96),
-        ]
+#         self.registers = [
+#             range(68, 77),
+#             range(77, 87),
+#             range(54, 68),
+#             range(87, 96),
+#             range(36, 48),
+#             range(77, 87),
+#             range(68, 77),
+#             range(87, 96),
+#         ]
 
-        self.layer_density_order = [
-            'eighth',
-            'half',
-            'quarter',
-            'sixteenth',
-            'half',
-            'whole',
-            'quarter',
-            'sixteenth'
-        ]
+#         self.layer_density_order = [
+#             'eighth',
+#             'half',
+#             'quarter',
+#             'sixteenth',
+#             'half',
+#             'whole',
+#             'quarter',
+#             'sixteenth'
+#         ]
 
-        self.n_layers_sections = Sections(8, self.len_audio)
-        n = 1
-        for section in self.n_layers_sections:
-            section.n_layers = n
-            n += 1
+#         self.n_layers_sections = Sections(8, self.len_audio)
+#         n = 1
+#         for section in self.n_layers_sections:
+#             section.n_layers = n
+#             n += 1
 
-        harmonic_rhythm_duration = 2.0
+#         harmonic_rhythm_duration = 2.0
 
-        self.harmony_sections = Sections(int(self.duration_seconds / harmonic_rhythm_duration), self.len_audio)
-        for harmony in self.harmony_sections:
-            if harmony.index % 4 == 0 or harmony.index % 4 == 1:
-                harmony.harmony = [0, 2, 4, 7, 9]
-            elif harmony.index % 4 == 2:
-                harmony.harmony = [2, 4, 6, 9, 11]
-            else:
-                harmony.harmony = [4, 6, 8, 11, 1]
+#         self.harmony_sections = Sections(int(self.duration_seconds / harmonic_rhythm_duration), self.len_audio)
+#         for harmony in self.harmony_sections:
+#             if harmony.index % 4 == 0 or harmony.index % 4 == 1:
+#                 harmony.harmony = [0, 2, 4, 7, 9]
+#             elif harmony.index % 4 == 2:
+#                 harmony.harmony = [2, 4, 6, 9, 11]
+#             else:
+#                 harmony.harmony = [4, 6, 8, 11, 1]
 
-    def go(self):
-        i = 0
-        for section in self.n_layers_sections:
-            beats = self.meter.get_between_samples(section.start, section.next_start)
+#     def go(self):
+#         i = 0
+#         for section in self.n_layers_sections:
+#             beats = self.meter.get_between_samples(section.start, section.next_start)
 
-            for layer in range(section.n_layers):
-                duration_name = self.layer_density_order[layer]
-                for beat in beats[duration_name]:
-                    if np.random.random() > .22:
-                        harmony = self.harmony_sections.get_by_sample_offset(beat.start_samples)
-                        pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
-                        pitch = np.random.choice(pitch_options)
-                        note = self.marimba.get_note(pitch)
-                        print i
-                        i += 1
+#             for layer in range(section.n_layers):
+#                 duration_name = self.layer_density_order[layer]
+#                 for beat in beats[duration_name]:
+#                     if np.random.random() > .22:
+#                         harmony = self.harmony_sections.get_by_sample_offset(beat.start_samples)
+#                         pitch_options = [p for p in self.registers[layer] if p % 12 in harmony.harmony]
+#                         pitch = np.random.choice(pitch_options)
+#                         note = self.marimba.get_note(pitch)
+#                         print i
+#                         i += 1
 
-                        if beat.index % 8 == 0:
-                            amplify = np.random.choice(np.linspace(.7, 1.1, 10))
-                        elif beat.index % 8 == 4:
-                            amplify = np.random.choice(np.linspace(.5, .8, 10))
-                        elif beat.index % 8 in [2, 6]:
-                            amplify = np.random.choice(np.linspace(.3, .6, 10))
-                        elif beat.index % 8 in [1, 3, 5, 7]:
-                            amplify = np.random.choice(np.linspace(.1, .4, 10))
+#                         if beat.index % 8 == 0:
+#                             amplify = np.random.choice(np.linspace(.7, 1.1, 10))
+#                         elif beat.index % 8 == 4:
+#                             amplify = np.random.choice(np.linspace(.5, .8, 10))
+#                         elif beat.index % 8 in [2, 6]:
+#                             amplify = np.random.choice(np.linspace(.3, .6, 10))
+#                         elif beat.index % 8 in [1, 3, 5, 7]:
+#                             amplify = np.random.choice(np.linspace(.1, .4, 10))
 
-                        # if section.index == section.of_n_sections - 2:
-                        #     amplify -=
-                        #     amplify = np.random.choice(np.linspace(.01, .24, 20))
-                        # elif section.index == section.of_n_sections - 1:
-                        #     amplify = np.random.choice(np.linspace(.001, .024, 20))
-                        # else:
-                        #     amplify = np.random.choice(np.linspace(.25, 0.9, 10))
+#                         # if section.index == section.of_n_sections - 2:
+#                         #     amplify -=
+#                         #     amplify = np.random.choice(np.linspace(.01, .24, 20))
+#                         # elif section.index == section.of_n_sections - 1:
+#                         #     amplify = np.random.choice(np.linspace(.001, .024, 20))
+#                         # else:
+#                         #     amplify = np.random.choice(np.linspace(.25, 0.9, 10))
 
-                        self.audio.add(
-                            beat.start_samples,
-                            note,
-                            amplify=amplify,
-                            pan=np.random.choice(np.linspace(.15, .85, 10)))
+#                         self.audio.add(
+#                             beat.start_samples,
+#                             note,
+#                             amplify=amplify,
+#                             pan=np.random.choice(np.linspace(.15, .85, 10)))
 
 
 class Polyrhythm20_21(object):
@@ -1168,6 +1191,77 @@ class AnthonyDouglass(object):
             next_start = self.add_pattern(next_start, a, b)
 
 
+def deviations_from_harmonic_series():
+    print 'Running deviations_from_harmonic_series...'
+    marimba = Marimba()
+    total_duration_seconds = 300
+    audio = Audio(total_duration_seconds)
+
+    quarter_duration_in_seconds = 1.0
+
+    harmonic_rhythm_duration = 10
+    offset_start = 0
+    offset_end = harmonic_rhythm_duration
+
+    i = 0
+    while offset_end <= total_duration_seconds:
+        deviation_threshhold = random_from_range(0, 1.0)
+        deviation_width = random_from_range(0, .5)
+
+        n_parts = random.randint(7, 11)
+
+        lowest_harmonic = random.randint(1, 4)
+        n_harmonics = n_parts
+
+        lowest_midi_note = random.randint(40, 50)
+
+        pitches = get_slice_of_harmonic_series(lowest_harmonic, n_harmonics, lowest_midi_note=lowest_midi_note)
+
+        deviated_pitches = []
+        for a, b, c in n_wise(pitches, 3):
+            if random.random() < deviation_threshhold:
+                lowest = max([b - deviation_width, a])
+                highest = min([b + deviation_width, c])
+                b = random_from_range(lowest, highest)
+            deviated_pitches.append(b)
+
+        durations = random_from_range(.6, 1.5, size=n_parts)
+        if random.random() < .2:
+            durations = random_from_range(2.0, 6.0, size=n_parts)
+
+        amplify_range = (.1, .7)
+        if random.random() < .3:
+            amplify_range = (.2, .8)
+
+        for pitch, duration in zip(deviated_pitches, durations):
+            amplify = random_from_range(amplify_range[0], amplify_range[-1])
+
+            random_mute_threshhold = random_from_range(.4, .7)
+            if duration > 2.2:
+                random_mute_threshhold = random_from_range(.8, 1.0)
+
+            # print pitch, '\t', duration
+            duration *= quarter_duration_in_seconds
+            pulse(
+                audio,
+                marimba,
+                midi_note=pitch,
+                duration_seconds=duration,
+                random_mute_threshhold=random_mute_threshhold,
+                amplify=amplify,
+                start_together='random',
+                offset_start=offset_start,
+                offset_end=offset_end,
+            )
+
+        offset_start = offset_end
+        offset_end += random.choice([harmonic_rhythm_duration, harmonic_rhythm_duration / 2])
+
+    audio.write_wav('deviations-from-harmonic-series')
+    print 'Done running deviations_from_harmonic_series.'
+
+
+
 if __name__ == '__main__':
     # microtonal_experiment_1()
     # random_notes_2()
@@ -1192,4 +1286,5 @@ if __name__ == '__main__':
     # Diss()
     # WithMeter()
     # Polyrhythm20_21()
-    AnthonyDouglass(add_microbeats=True)
+    # AnthonyDouglass(add_microbeats=True)
+    deviations_from_harmonic_series()

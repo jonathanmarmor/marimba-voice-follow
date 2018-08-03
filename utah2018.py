@@ -53,19 +53,22 @@ class Utah2018(object):
 
     def go(self):
         self.meter = Meter(self.duration_seconds, bpm=80)
-        self.scale_options = get_scale_options()
 
-        scale = random.choice(self.scale_options)
+        # Make a random scale
+        options = range(12)
+        scale = []
+        for _ in range(7):
+            pc = np.random.choice(options)
+            options.remove(pc)
+            scale.append(pc)
+        scale.sort()
+        print scale
 
         pitch = np.random.randint(62, 76)
 
         for sixteenth in self.meter.layers_by_name['sixteenth']:
             if np.random.random() < .8:
                 # Rest every 10 or so notes
-
-                if np.random.random() < .95:
-                    # Switch scales every 10 or so notes
-                    scale = random.choice(self.scale_options)
 
                 pitch_options = range(max([pitch - 5, 56]), min([pitch + 6, 88]))
                 pitch_options.remove(pitch)
@@ -191,4 +194,4 @@ class Utah2018(object):
 
 
 if __name__ == '__main__':
-    Utah2018('0.0.2')
+    Utah2018('0.0.3')

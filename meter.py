@@ -5,7 +5,7 @@
 
 import numpy as np
 
-from utils import scale, get_beat_starts
+from utils import scale  #, get_beat_starts
 
 
 def seconds_to_samples(seconds, sample_rate=44100):
@@ -43,6 +43,8 @@ class Beat(object):
             'whole': 1
         }
         self.position_in_bar = index % hierarchy[name]
+
+        self.
 
         self.name = name
 
@@ -119,6 +121,3 @@ class Meter(object):
                     break
 
         return result
-
-
-
